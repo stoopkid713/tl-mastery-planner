@@ -1,571 +1,877 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>T&L Weapon Mastery Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d1117;color:#c9d1d9;font-family:'Segoe UI',sans-serif;min-height:100vh}
-a{color:#58a6ff}
+:root{
+  --bg:#07070f;--surface:#0e0e1a;--card:#151523;--card2:#1c1c2e;
+  --border:rgba(140,120,200,0.18);--border2:rgba(140,120,200,0.32);
+  --gold:#d4b45a;--gold2:#f5df96;
+  --purple:#7c5cbf;--purple2:#b899f0;
+  --blue:#72c8ff;--green:#6ef5ce;--orange:#ffb366;--red:#ff8585;
+  --text:#f2eeff;--muted:#9b90b0;--dim:#6a5e80;
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(124,92,191,0.15) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(140,120,200,0.04) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(140,120,200,0.04) 40px);pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:min(100%,640px);margin:0 auto;padding-bottom:60px}
+
+/* HEADER */
+.header{padding:14px 16px 10px;text-align:center;border-bottom:1px solid var(--border)}
+.header-crown{font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:3px;font-family:'Cinzel',serif}
+.header h1{font-family:'Cinzel',serif;font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--gold2),var(--purple2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px}
+.header-sub{font-size:12px;color:var(--muted);margin-top:2px;letter-spacing:0.5px}
+.patch-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--gold);margin-top:6px;letter-spacing:1px}
+.patch-badge::before{content:'⚡';font-size:10px}
 
 /* NAV */
-.nav{background:#161b22;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:0;padding:0 20px}
-.nav-title{color:#f0f6fc;font-weight:700;font-size:1rem;padding:14px 20px 14px 0;border-right:1px solid #30363d;margin-right:16px;white-space:nowrap}
-.tab{padding:14px 18px;cursor:pointer;color:#8b949e;font-size:0.85rem;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
-.tab:hover{color:#c9d1d9}
-.tab.active{color:#f0f6fc;border-bottom-color:#58a6ff}
+.nav{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-btn{padding:8px 2px;background:none;border:none;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:0.5px}
+.nav-btn .nav-icon{font-size:14px}
+.nav-btn.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.nav-btn:active{background:rgba(255,255,255,0.03)}
 
-/* PAGE */
-.page{display:none;padding:20px;max-width:1200px;margin:0 auto}
-.page.active{display:block}
+/* SECTION */
+.section{display:none;padding:14px}.section.active{display:block}
+
+/* RULE BANNER */
+.rule-banner{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;color:var(--text);margin-bottom:12px;line-height:1.55}
+.rule-banner strong{color:var(--gold2)}
+.rule-banner .rnote{font-size:12px;color:var(--muted);margin-top:5px;display:block}
+.rule-banner.blue{border-left-color:var(--blue)}
+.rule-banner.green{border-left-color:var(--green)}
+.rule-banner.purple{border-left-color:var(--purple2)}
+.rule-banner.orange{border-left-color:var(--orange)}
+
+/* COLLAPSIBLE */
+.collapsible{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:12px;overflow:hidden}
+.coll-hdr{padding:11px 13px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.coll-hdr .ch-title{font-size:12px;font-weight:700;color:var(--purple2);text-transform:uppercase;letter-spacing:1px}
+.coll-hdr .ch-arr{color:var(--muted);font-size:12px;transition:transform 0.2s}
+.coll-hdr.open .ch-arr{transform:rotate(180deg)}
+.coll-body{display:none;padding:11px 13px 13px;font-size:13px;line-height:1.65;color:var(--text);border-top:1px solid var(--border)}
+.coll-body.open{display:block}
+.coll-body p{margin-bottom:7px}.coll-body p:last-child{margin-bottom:0}
+.hi{color:var(--gold2);font-weight:600}.warn{color:var(--red);font-weight:600}.good{color:var(--green);font-weight:600}
+.cnote{color:var(--muted);font-size:12.5px;display:block;margin-top:6px}
 
 /* CARDS */
-.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;margin-bottom:16px}
-.card h3{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:#8b949e;margin-bottom:14px}
-.cards-row{display:grid;gap:12px;margin-bottom:16px}
-.cards-row.c2{grid-template-columns:1fr 1fr}
-.cards-row.c3{grid-template-columns:1fr 1fr 1fr}
-.cards-row.c4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:700px){.cards-row.c2,.cards-row.c3,.cards-row.c4{grid-template-columns:1fr 1fr}}
-@media(max-width:480px){.cards-row.c2,.cards-row.c3,.cards-row.c4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:12px}
+.card-title{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.card p{font-size:13px;line-height:1.7;color:var(--text);margin-bottom:7px}.card p:last-child{margin-bottom:0}
 
-/* STAT CHIPS */
-.stat{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px}
-.stat .lbl{font-size:0.68rem;text-transform:uppercase;letter-spacing:.05em;color:#8b949e}
-.stat .val{font-size:1.15rem;font-weight:700;margin-top:3px}
-.blue{color:#58a6ff}.green{color:#3fb950}.purple{color:#a371f7}.orange{color:#ffa657}.red{color:#f85149}.yellow{color:#e3b341}
+/* STAT TILES */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+@media(max-width:480px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stile{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 8px;text-align:center}
+.stile .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.stile .val{font-family:'Cinzel',serif;font-size:18px;font-weight:700;margin-top:4px;line-height:1}
+.stile .val.blue{color:var(--blue)}.stile .val.green{color:var(--green)}.stile .val.gold{color:var(--gold2)}.stile .val.purple{color:var(--purple2)}
 
-/* BUFF TOGGLES */
-.buff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-.buff-toggle{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:all .15s;user-select:none}
-.buff-toggle:hover{border-color:#484f58}
-.buff-toggle.on{border-color:#58a6ff;background:#1f2d3d}
-.buff-toggle input{display:none}
-.buff-check{width:18px;height:18px;min-width:18px;border:2px solid #484f58;border-radius:4px;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
-.buff-toggle.on .buff-check{background:#58a6ff;border-color:#58a6ff;color:#fff;font-size:11px}
-.buff-info .name{font-size:0.85rem;font-weight:600;color:#f0f6fc}
-.buff-info .desc{font-size:0.72rem;color:#8b949e;margin-top:2px}
-.buff-info .pills{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
-.pill{font-size:0.68rem;padding:2px 7px;border-radius:10px;font-weight:600}
-.pill.m{background:#1f4068;color:#58a6ff}
-.pill.e{background:#1a3a1f;color:#3fb950}
-.pill.dur{background:#2d2416;color:#ffa657}
+/* BUFF CARDS */
+.buff-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;transition:all 0.15s}
+.buff-card.on{border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.04)}
+.buff-card.amitoi{border-left:3px solid var(--purple2)}
+.bc-row{display:flex;align-items:flex-start;gap:10px}
+.bc-icon{font-size:24px;line-height:1;margin-top:2px;width:32px;text-align:center;flex-shrink:0}
+.bc-body{flex:1;min-width:0}
+.bc-name{font-size:14px;font-weight:700;color:var(--gold2);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.bc-desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+.bc-pills{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.pill{font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:0.3px}
+.pill.m{background:rgba(114,200,255,0.15);color:var(--blue)}
+.pill.e{background:rgba(110,245,206,0.15);color:var(--green)}
+.pill.dur{background:rgba(255,179,102,0.15);color:var(--orange)}
+.bc-toggle{position:relative;width:42px;height:22px;background:var(--card2);border:1px solid var(--border);border-radius:11px;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bc-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--muted);border-radius:50%;transition:all 0.2s}
+.buff-card.on .bc-toggle{background:rgba(201,168,76,0.2);border-color:var(--gold)}
+.buff-card.on .bc-toggle::after{left:22px;background:var(--gold)}
 
-/* INPUTS */
-input[type=number],input[type=text],select{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;padding:7px 10px;font-size:0.85rem;width:100%}
-input[type=number]:focus,select:focus{outline:none;border-color:#58a6ff}
-.input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.input-row label{font-size:0.8rem;color:#8b949e;white-space:nowrap;min-width:140px}
-.input-row input,.input-row select{flex:1;max-width:160px}
-.input-row .unit{font-size:0.75rem;color:#484f58}
-
-/* BUTTONS */
-.btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:0.82rem;transition:all .15s;white-space:nowrap}
-.btn:hover{background:#30363d}
-.btn.primary{background:#1f6feb;border-color:#388bfd;color:#fff}
-.btn.primary:hover{background:#388bfd}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-
-/* CHART */
-.chart-wrap{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;height:300px;margin-bottom:16px;position:relative}
+/* AMITOI EDITABLE */
+.amitoi-edit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ae-field{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px}
+.ae-field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px}
+.ae-field input{background:none;border:none;color:var(--text);font-family:'Cinzel',serif;font-size:18px;font-weight:700;width:100%;outline:none}
+.ae-field .unit{font-size:13px;color:var(--muted);margin-left:2px}
+#amM{color:var(--blue)}#amE{color:var(--green)}
+.ae-presets{display:flex;gap:7px;margin-top:8px}
+.ae-presets button{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.5px}
+.ae-presets button:hover{border-color:var(--gold);color:var(--gold2)}
 
 /* WEAPON TABLE */
-.wtable{width:100%;border-collapse:collapse;font-size:0.8rem}
-.wtable th{background:#0d1117;color:#8b949e;padding:8px 10px;text-align:left;font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.wtable td{padding:8px 10px;border-bottom:1px solid #21262d;vertical-align:middle}
-.wtable tr:last-child td{border:none}
-.wtable input[type=number]{width:65px;padding:5px 7px;font-size:0.8rem}
-.weeks-bar{height:5px;background:#21262d;border-radius:3px;margin-top:4px;overflow:hidden;min-width:60px}
-.weeks-fill{height:100%;background:linear-gradient(90deg,#58a6ff,#a371f7);border-radius:3px}
-.weapon-icon{font-size:1.1rem;margin-right:4px}
+.wtbl{width:100%;border-collapse:collapse;font-size:12px}
+.wtbl th{background:var(--card2);padding:7px 8px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.wtbl th:not(:first-child){text-align:right}
+.wtbl td{padding:8px 8px;border-top:1px solid var(--border);vertical-align:middle}
+.wtbl td:not(:first-child){text-align:right}
+.wtbl input[type=number]{width:54px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 5px;font-size:12px;font-family:'Rajdhani',sans-serif;text-align:center}
+.wtbl input[type=number]:focus{outline:none;border-color:var(--gold)}
+.wname{display:flex;align-items:center;gap:6px;font-weight:600}
+.wname .icon{font-size:14px}
+.wxp{color:var(--gold2);font-weight:700}
+.wweeks{color:var(--purple2);font-weight:700}
+.wdone{color:var(--green);font-weight:700}
 
-/* LOOKUP TABLE */
-.ltable-wrap{max-height:500px;overflow-y:auto;border-radius:0 0 10px 10px}
-.ltable{width:100%;border-collapse:collapse;font-size:0.78rem}
-.ltable thead th{background:#0d1117;color:#8b949e;padding:8px 12px;text-align:right;font-weight:600;position:sticky;top:0;z-index:2;font-size:0.72rem;letter-spacing:.03em}
-.ltable thead th:first-child{text-align:center}
-.ltable tbody tr{border-bottom:1px solid #1c2128;cursor:pointer;transition:background .1s}
-.ltable tbody tr:hover{background:#21262d}
-.ltable tbody tr.hl{background:#1c2536}
-.ltable tbody tr.mine{background:#1a2433;border-left:3px solid #ffa657}
-.ltable tbody tr.pool-row td:nth-child(3){color:#3fb950;font-weight:700}
-.ltable td{padding:6px 12px;text-align:right;color:#c9d1d9}
-.ltable td:first-child{text-align:center;font-weight:700;color:#f0f6fc}
-.tbl-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #30363d}
-.search-box{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;padding:5px 10px;font-size:0.8rem;width:130px}
-.search-box:focus{outline:none;border-color:#58a6ff}
+/* INPUTS */
+.input-row{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;margin-bottom:10px}
+.input-row label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.input-row input[type=number]{background:var(--card2);border:1px solid var(--border);color:var(--gold2);border-radius:6px;padding:7px 10px;font-size:15px;font-family:'Cinzel',serif;font-weight:700;text-align:right;width:100%;outline:none}
+.input-row input[type=number]:focus{border-color:var(--gold)}
+.input-row .sub{font-size:11px;color:var(--dim);grid-column:1/3;margin-top:-3px}
 
-/* PROGRESS BAR */
-.pbar{height:8px;background:#21262d;border-radius:4px;overflow:hidden;margin-top:6px}
-.pbar-fill{height:100%;border-radius:4px;transition:width .3s}
+/* BUTTONS */
+.btn{background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11.5px;padding:7px 14px;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.7px;transition:all 0.15s}
+.btn:hover{border-color:var(--gold);color:var(--gold2)}
+.btn.active{background:rgba(201,168,76,0.12);border-color:var(--gold);color:var(--gold2)}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 
-/* FORMULA BOX */
-.formula{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.8rem;line-height:2;color:#8b949e;margin-top:10px}
-.formula .hi{color:#c9d1d9;font-weight:600}
-.formula .eq{color:#58a6ff}
+/* CHART */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;height:300px;position:relative;margin-bottom:12px}
 
-/* DIVIDER */
-.divider{border:none;border-top:1px solid #21262d;margin:16px 0}
+/* RESULT */
+.result-main{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:15px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden}
+.result-main::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.result-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+.result-big{font-family:'Cinzel',serif;font-size:38px;font-weight:700;line-height:1;margin-bottom:5px;background:linear-gradient(135deg,var(--gold2),var(--purple2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-sub{font-size:13px;color:var(--text);margin-top:6px}
+.result-gap{display:flex;justify-content:center;gap:18px;margin-top:8px}
+.result-gap div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.result-gap .gl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.result-gap .gv{font-size:14px;font-weight:700}
 
-/* SESSION RESULT */
-.session-result{background:#0d1117;border-radius:8px;padding:14px 18px;font-size:0.85rem;line-height:2;margin-top:12px}
+/* ANALYSIS */
+.analysis{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--radius-sm);padding:12px;font-size:13px;line-height:1.6;margin-bottom:12px}
+.analysis .a-title{font-weight:700;color:var(--gold);margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px}
 
-.note{font-size:0.72rem;color:#484f58;margin-top:4px}
+/* CMP TABLE */
+.cmp-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.cmp-tbl th{background:var(--card2);padding:7px 8px;text-align:right;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.cmp-tbl th:first-child{text-align:left}
+.cmp-tbl td{padding:8px 8px;border-top:1px solid var(--border);text-align:right}
+.cmp-tbl td:first-child{text-align:left;font-size:12px}
+.cmp-tbl tr.cur{background:rgba(201,168,76,0.08)}
+.cmp-tbl tr.cur td:first-child{color:var(--gold2);font-weight:700}
+.cmp-tbl tr.cur td:first-child::before{content:'▶ ';color:var(--gold)}
+
+/* LOOKUP */
+.ltbl-wrap{max-height:520px;overflow-y:auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.ltbl{width:100%;border-collapse:collapse;font-size:12px}
+.ltbl thead th{background:var(--card2);padding:8px 10px;text-align:right;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;position:sticky;top:0;z-index:2;font-weight:700}
+.ltbl thead th:first-child{text-align:center}
+.ltbl tbody tr{border-top:1px solid var(--border);cursor:pointer}
+.ltbl tbody tr:hover{background:rgba(255,255,255,0.03)}
+.ltbl tbody tr.mine{background:rgba(255,179,102,0.07);border-left:2px solid var(--orange)}
+.ltbl td{padding:6px 10px;text-align:right;color:var(--text)}
+.ltbl td:first-child{text-align:center;font-weight:700;color:var(--gold2)}
+.ltbl-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border)}
+.ltbl-header .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.ltbl-header input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;width:120px;font-family:'Rajdhani',sans-serif}
+
+/* CYCLE DIAGRAM */
+.cycle{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.cycle-step{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 10px;text-align:center;position:relative}
+.cycle-step .num{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.cycle-step .lbl{font-size:11px;color:var(--gold2);text-transform:uppercase;letter-spacing:0.8px;line-height:1.3;font-weight:700}
+.cycle-step .det{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+@media(max-width:480px){.cycle{grid-template-columns:1fr}}
+
+/* FORMULA */
+.fblock{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--purple2);margin:8px 0;line-height:1.8;font-weight:600}
+.fex{background:var(--card2);border-radius:var(--radius-sm);padding:9px 11px;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
+.exv{color:var(--gold2);font-weight:700}
+
+/* QUICK ACTION */
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.quick button{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;transition:all 0.15s}
+.quick button:hover{border-color:var(--gold);color:var(--gold2)}
+.quick button .big{font-family:'Cinzel',serif;font-size:16px;color:var(--gold2);display:block;margin-bottom:2px}
+
+@media(max-width:560px){
+  .nav-btn{font-size:9.5px;padding:7px 1px}
+  .nav-btn .nav-icon{font-size:13px}
+  .header h1{font-size:17px}
+  .result-big{font-size:30px}
+}
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="nav">
-  <div class="nav-title">⚔️ T&amp;L Mastery Planner</div>
-  <div class="tab active" onclick="showTab('setup')">My Setup</div>
-  <div class="tab" onclick="showTab('planner')">Weapon Planner</div>
-  <div class="tab" onclick="showTab('session')">Session Calc</div>
-  <div class="tab" onclick="showTab('table')">Lookup Table</div>
+<div class="header">
+  <div class="header-crown">Throne &amp; Liberty · Weapon Mastery</div>
+  <h1>Mastery XP Planner</h1>
+  <div class="header-sub">Quartic model · 23 measured anchors · ±0.077% error</div>
+  <div class="patch-badge">L0 → L200 = 1.186B XP · 638.7 base XP/token</div>
 </div>
 
-<!-- ═══════════════════════════════ MY SETUP ═══════════════════════════════ -->
-<div class="page active" id="tab-setup">
+<nav class="nav">
+  <button class="nav-btn active" onclick="switchTab('start',this)"><span class="nav-icon">📖</span>Start</button>
+  <button class="nav-btn" onclick="switchTab('buffs',this)"><span class="nav-icon">✨</span>Buffs</button>
+  <button class="nav-btn" onclick="switchTab('weapons',this)"><span class="nav-icon">⚔️</span>Weapons</button>
+  <button class="nav-btn" onclick="switchTab('session',this)"><span class="nav-icon">🎯</span>Session</button>
+  <button class="nav-btn" onclick="switchTab('curve',this)"><span class="nav-icon">📊</span>Curve</button>
+  <button class="nav-btn" onclick="switchTab('table',this)"><span class="nav-icon">📋</span>Table</button>
+  <button class="nav-btn" onclick="switchTab('math',this)"><span class="nav-icon">📐</span>Math</button>
+</nav>
 
-  <div class="card">
-    <h3>Active Buffs</h3>
-    <div class="buff-grid" id="buffGrid"></div>
+<!-- ==================== START ==================== -->
+<div class="section active" id="sec-start">
+
+  <div class="rule-banner">
+    <strong>Welcome.</strong> Model how long it takes to level your weapons via the mastery system — and exactly how much each buff actually saves you.
+    <span class="rnote">No login. No tracking. Edit your Amitoi numbers on the Buffs tab and the whole tool updates.</span>
   </div>
 
-  <div class="cards-row c4" id="summaryCards">
-    <div class="stat"><div class="lbl">Mastery EXP Bonus</div><div class="val blue" id="sTotalMastery">—</div></div>
-    <div class="stat"><div class="lbl">Token Efficiency</div><div class="val green" id="sTotalEff">—</div></div>
-    <div class="stat"><div class="lbl">XP per Token</div><div class="val purple" id="sXpPerToken">—</div></div>
-    <div class="stat"><div class="lbl">Multiplier vs Bare</div><div class="val orange" id="sMultiplier">—</div></div>
+  <div class="card">
+    <div class="card-title">Weapon Mastery in 60 seconds</div>
+    <p>Each weapon has its own mastery level from <span class="hi">0 to 200</span>. Levels are bought with <span class="hi">mastery XP</span>, generated by burning <span class="hi">Abyssal Contract tokens</span> while killing mobs. Maxing one weapon costs roughly <span class="hi">1.18 billion XP</span> total — but per-level cost grows steeply: <span class="hi">L0→1 ≈ 590k</span>, <span class="hi">L199→200 ≈ 19.3M</span>.</p>
+    <p>Mastery bonuses are global — they apply across every build that uses that weapon. So most players want every weapon high. The real question is <span class="hi">how to spend your weekly tokens to get there fastest</span>.</p>
   </div>
 
   <div class="card">
-    <h3>Chart</h3>
-    <div class="btn-row">
-      <button class="btn active" id="btnPL" onclick="setChart('perlevel')">Per-Level Cost</button>
-      <button class="btn" id="btnCU" onclick="setChart('cumul')">Cumulative</button>
-      <button class="btn" id="btnTM" onclick="setChart('tomax')">To Max</button>
+    <div class="card-title">The token burn cycle</div>
+    <div class="cycle">
+      <div class="cycle-step"><div class="num">STEP 1</div><div class="lbl">Build</div><div class="det">~80,000 tokens accumulated per week from Abyssal Contract + daily activities</div></div>
+      <div class="cycle-step"><div class="num">STEP 2</div><div class="lbl">Buff</div><div class="det">Stack Golden Apple Pie, Mastery Report, Black Anvil, Guild Blessing before burning</div></div>
+      <div class="cycle-step"><div class="num">STEP 3</div><div class="lbl">Burn</div><div class="det">20–40k tokens per ~30 min farming session, with food active the whole time</div></div>
     </div>
-    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+    <p style="margin-top:8px">You don't have to burn the week you generate — tokens stack in inventory. Best practice: queue 20–40k tokens, light your full buff stack (food = 30 min duration), and burn one session in a single window.</p>
   </div>
 
-  <div class="card">
-    <h3>Range Calculator</h3>
-    <div class="input-row">
-      <label>From level</label>
-      <input type="number" id="rcFrom" value="130" min="0" max="200" oninput="calcRange()">
-      <label style="min-width:60px;text-align:center">→ To</label>
-      <input type="number" id="rcTo" value="200" min="0" max="200" oninput="calcRange()">
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">Direct apply vs. stored XP</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>When you burn a token, you choose where the XP goes:</p>
+      <p><span class="hi">Direct apply</span> — XP goes straight to your currently equipped weapon. Linear, no inventory clutter, can't redirect once spent.</p>
+      <p><span class="hi">Store to pool</span> — XP banks in inventory as a "mastery XP item" you spend on any weapon later. Trades a small inventory cost for flexibility — farm with your strongest weapon while leveling a weaker one.</p>
+      <p><span class="good">XP per token is identical either way.</span> The choice is purely about which weapon ends up with the XP. Weapons already at L200 can only generate stored XP (or it's wasted).</p>
+      <p class="cnote">This tool assumes direct-apply when showing "levels gained" — the math is the same regardless, the pool just delays where the levels land.</p>
     </div>
-    <div class="session-result" id="rcResult"></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">How buffs stack</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>Two separate multipliers compound:</p>
+      <div class="fblock">XP per token = <span class="hi">Base</span> × (1 + <span class="hi">Mastery %</span>) × (1 + <span class="hi">Efficiency %</span>)</div>
+      <p><span class="hi">Mastery %</span> increases the XP each kill generates. Sources: Amitoi panel, Mastery Report, Guild Blessing, Food, Black Anvil weapon.</p>
+      <p><span class="hi">Efficiency %</span> decreases how many tokens each kill consumes — same XP per kill, more kills per token. Sources: Amitoi, Food.</p>
+      <p><span class="good">All mastery sources add linearly, then multiply against total efficiency.</span> A full stack vs Amitoi-only ≈ <span class="hi">2.6× XP per token</span>.</p>
+      <p class="cnote">Base XP per token = 638.7 measured on Mutant Slaughterers (31,935 XP from 50 base tokens, source video). Different zones may pay slightly different bases — override on the Session tab if you measure something different.</p>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">How to use this tool</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p><span class="hi">1. Buffs tab</span> — type in your current Amitoi values (read them straight off the in-game panel), toggle the buffs you'll actually run.</p>
+      <p><span class="hi">2. Weapons tab</span> — set your current and target levels per weapon. See weekly progress at your buff stack.</p>
+      <p><span class="hi">3. Session tab</span> — punch in tokens you plan to burn this session, see exactly how many levels you'll gain and compare against other buff scenarios.</p>
+      <p><span class="hi">4. Curve / Table</span> — reference the full per-level cost curve.</p>
+      <p><span class="hi">5. Math tab</span> — sources, formulas, model accuracy, derivation.</p>
+    </div>
   </div>
 
 </div>
 
-<!-- ═══════════════════════════════ WEAPON PLANNER ═══════════════════════════════ -->
-<div class="page" id="tab-planner">
+<!-- ==================== BUFFS ==================== -->
+<div class="section" id="sec-buffs">
 
-  <div class="cards-row c3">
-    <div class="stat">
-      <div class="lbl">Weekly Token Burn</div>
-      <input type="number" id="weeklyTokens" value="80000" min="1000" max="500000" oninput="updatePlanner()" style="margin-top:6px">
+  <div class="rule-banner blue">
+    <strong>XP/token = Base × (1 + Mastery %) × (1 + Efficiency %)</strong>
+    <span class="rnote">All mastery sources add linearly (5% + 50% + 50% = 105%), then multiply against total efficiency. Edit Amitoi below to match your in-game numbers.</span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stile"><div class="lbl">Total Mastery</div><div class="val blue" id="sTotalMastery">—</div></div>
+    <div class="stile"><div class="lbl">Efficiency</div><div class="val green" id="sTotalEff">—</div></div>
+    <div class="stile"><div class="lbl">XP / token</div><div class="val gold" id="sXpPerToken">—</div></div>
+    <div class="stile"><div class="lbl">vs Bare</div><div class="val purple" id="sMultiplier">—</div></div>
+  </div>
+
+  <div class="buff-card amitoi on" id="amitoiCard">
+    <div class="bc-row">
+      <div class="bc-icon">🎀</div>
+      <div class="bc-body">
+        <div class="bc-name">Amitoi Effects <span style="font-size:11px;color:var(--muted);font-weight:400">Always active</span></div>
+        <div class="bc-desc">Rolled-up bonuses from your in-game Amitoi panel. The two columns shown there (Amount Effects + Pal Synergy) are quest milestones — the only numbers we care about are the final rolled-up mastery and efficiency below.</div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="lbl">Weekly XP (current setup)</div>
-      <div class="val blue" id="pWeeklyXp">—</div>
-      <div class="note" id="pXpNote"></div>
+    <div class="amitoi-edit">
+      <div class="ae-field">
+        <label>Weapon Mastery EXP Bonus</label>
+        <input type="number" id="amM" value="5.1" min="0" max="20" step="0.1" oninput="updateStats()"/><span class="unit">%</span>
+      </div>
+      <div class="ae-field">
+        <label>Token Efficiency</label>
+        <input type="number" id="amE" value="7.0" min="0" max="20" step="0.1" oninput="updateStats()"/><span class="unit">%</span>
+      </div>
     </div>
-    <div class="stat">
-      <div class="lbl">Weekly XP (full stack)</div>
-      <div class="val purple" id="pWeeklyXpMax">—</div>
-      <div class="note">All buffs active</div>
+    <div class="ae-presets">
+      <button onclick="setAmitoi(5.1,7.0)">Default current (5.1 / 7.0)</button>
+      <button onclick="setAmitoi(10,8.5)">Quests maxed (10 / 8.5)</button>
     </div>
   </div>
 
-  <div class="card">
-    <h3>Weapons — Current &amp; Target Levels</h3>
-    <p style="font-size:0.75rem;color:#8b949e;margin-bottom:12px">Click a row to edit. Weeks = time at current weekly XP rate.</p>
-    <table class="wtable">
-      <thead>
-        <tr>
-          <th>Weapon</th>
-          <th>Current</th>
-          <th>Target</th>
-          <th>XP Needed</th>
-          <th style="min-width:120px">Weeks (current setup)</th>
-          <th>Weeks (full stack)</th>
-        </tr>
-      </thead>
-      <tbody id="weaponBody"></tbody>
+  <div id="buffList"></div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">Where do these buffs come from?</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p><span class="hi">Amitoi Effects:</span> the in-game Amitoi panel shows rolled-up bonuses from collected Amitoi. Two columns appear there ("Amount Effects" and "Pal Synergy") — those are quest progression milestones. The right column is the cap you reach when both quests are complete. Read the final rolled-up mastery / efficiency numbers off the panel and type them into the card above.</p>
+      <p><span class="hi">Mastery Report:</span> consumed when you use a token; gives a flat +30% Mastery for 30 minutes. Limited event item — save them for full-stack burns.</p>
+      <p><span class="hi">Guild Blessing Lv.3:</span> 24-hour +10% Mastery buff. Costs Sollant + Rock to craft, requires Lv.3 guild facility.</p>
+      <p><span class="hi">Golden Apple Pie:</span> 30 min food, the strongest single buff at +50% Mastery / +10% Efficiency. Always eat one before a burn session.</p>
+      <p><span class="hi">Black Anvil Weapon:</span> passive +50% Mastery while wielding the Black Anvil variant. Doesn't stack across multiple Black Anvil weapons in your loadout.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== WEAPONS ==================== -->
+<div class="section" id="sec-weapons">
+
+  <div class="rule-banner orange">
+    <strong>Weekly XP budget</strong> = tokens burned × XP per token
+    <span class="rnote">Default 80,000 tokens/week. Override below if you push harder or burn less.</span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stile">
+      <div class="lbl">Tokens / week</div>
+      <input type="number" id="weeklyTokens" value="80000" min="1000" max="500000" oninput="updatePlanner()" style="width:100%;background:none;border:none;font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold2);text-align:center;outline:none;margin-top:3px"/>
+    </div>
+    <div class="stile"><div class="lbl">Weekly XP — your buffs</div><div class="val blue" id="pWeeklyXp">—</div></div>
+    <div class="stile"><div class="lbl">Weekly XP — full stack</div><div class="val purple" id="pWeeklyXpMax">—</div></div>
+    <div class="stile"><div class="lbl">Levels / week (avg)</div><div class="val gold" id="pLvlPerWeek">—</div></div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 13px;border-bottom:1px solid var(--border)">
+      <div class="card-title" style="margin:0;padding:0;border:none">Your weapons</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Edit current and target levels. Weeks = time at your current buff rate.</div>
+    </div>
+    <table class="wtbl">
+      <thead><tr>
+        <th>Weapon</th>
+        <th>Now</th>
+        <th>Target</th>
+        <th>XP Needed</th>
+        <th>Weeks</th>
+        <th>Full Stack</th>
+      </tr></thead>
+      <tbody id="wtblBody"></tbody>
     </table>
   </div>
 
+  <div class="analysis">
+    <div class="a-title">Priority queue</div>
+    <div id="priorityQueue" style="font-size:13px;color:var(--text);line-height:1.7">—</div>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">Why 80k tokens / week?</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>Empirical average across active players. Token sources:</p>
+      <p>• <span class="hi">Abyssal Contract daily login</span> — flat per-day stipend</p>
+      <p>• <span class="hi">Daily quests + co-op dungeons</span> — burst rewards</p>
+      <p>• <span class="hi">Open-world activities</span> — bonus tokens from world events / chests</p>
+      <p>• <span class="hi">Weekly cap rollover</span> — unspent tokens carry forward</p>
+      <p>Hardcore players push higher (120k+) by hitting every daily and farming weekend events. Casual rotations land closer to 40–60k. Adjust the field above to your actual generation rate.</p>
+      <p class="cnote">Per typical burn session: 20–40k tokens consumed in ~30 minutes. With food (30 min duration), you usually fit one full buffed burn before re-eating. Mastery Report tokens get consumed inside the session — limit factor for stacking that buff.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== SESSION ==================== -->
+<div class="section" id="sec-session">
+
+  <div class="rule-banner green">
+    <strong>One burn session simulator.</strong> Plug in tokens + starting level → see exactly how many levels you'll gain, and how it compares across different buff stacks.
+    <span class="rnote">Uses the buffs you've toggled on the Buffs tab. Override the base XP/token if you're farming a different zone.</span>
+  </div>
+
   <div class="card">
-    <h3>Priority Queue — Optimal Order to Max</h3>
-    <div id="priorityResult" style="font-size:0.82rem;line-height:2.2"></div>
+    <div class="card-title">This Session</div>
+    <div class="input-row">
+      <label>Tokens to burn</label>
+      <input type="number" id="sesTokens" value="20000" min="100" oninput="calcSession()"/>
+      <div class="sub">Typical burn session: 20,000–40,000 tokens (~30 min)</div>
+    </div>
+    <div class="input-row">
+      <label>Starting weapon level</label>
+      <input type="number" id="sesStart" value="130" min="0" max="200" oninput="calcSession()"/>
+    </div>
+    <div class="input-row">
+      <label>Base XP per token</label>
+      <input type="number" id="sesBaseXpPerToken" value="638.7" step="0.1" min="100" oninput="calcSession()"/>
+      <div class="sub">638.7 = measured on Mutant Slaughterer (31,935 XP / 50 tokens). Override if farming a different zone.</div>
+    </div>
+  </div>
+
+  <div class="result-main">
+    <div class="result-label">Session Result</div>
+    <div class="result-big" id="sesBig">—</div>
+    <div class="result-sub" id="sesSub">—</div>
+    <div class="result-gap" id="sesGap"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Buff Comparison · same token burn</div>
+    <table class="cmp-tbl" id="cmpTbl"></table>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">▶ row matches your active buffs. Scenarios assume Amitoi at your current values.</div>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">What does each buff actually save you?</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>Looking at a 20,000-token session at Amitoi default (5.1 / 7.0):</p>
+      <p>• <span class="hi">Bare</span> = 718 XP/token, ~14.4M total</p>
+      <p>• <span class="hi">+ Golden Apple Pie</span> = 1,159 XP/token, ~23.2M total — <span class="good">+61% over bare</span></p>
+      <p>• <span class="hi">+ Black Anvil</span> = 1,533 XP/token, ~30.7M total — <span class="good">+113%</span></p>
+      <p>• <span class="hi">+ Mastery Report</span> = 1,757 XP/token, ~35.1M total — <span class="good">+145%</span></p>
+      <p>• <span class="hi">Full stack (incl. Guild Blessing)</span> = 1,892 XP/token, ~37.8M total — <span class="good">+163%</span></p>
+      <p class="cnote">Each buff adds less marginal value than the one before it (diminishing returns from linear stacking). Food alone is by far the biggest single contributor — never burn without it.</p>
+    </div>
   </div>
 
 </div>
 
-<!-- ═══════════════════════════════ SESSION CALC ═══════════════════════════════ -->
-<div class="page" id="tab-session">
+<!-- ==================== CURVE ==================== -->
+<div class="section" id="sec-curve">
 
-  <div class="cards-row c2">
-    <div class="card">
-      <h3>This Session</h3>
-      <div class="input-row"><label>Tokens to burn</label><input type="number" id="sesTokens" value="20000" min="100" oninput="calcSession()"></div>
-      <div class="input-row"><label>Starting level</label><input type="number" id="sesStart" value="130" min="0" max="200" oninput="calcSession()"></div>
-      <p class="note" style="margin-top:4px">Uses your current active buffs from Setup tab</p>
-    </div>
-    <div class="card">
-      <h3>Manual Override</h3>
-      <div class="input-row"><label>Base XP per base token</label><input type="number" id="sesBaseXpPerToken" value="638.7" step="0.1" oninput="calcSession()"></div>
-      <div class="formula">
-        From video: <span class="hi">31,935 XP</span> ÷ <span class="hi">50 tokens</span> = <span class="eq">638.7</span> base<br>
-        <span style="color:#484f58">Different mob types will vary. Measure and override above.</span>
-      </div>
-    </div>
+  <div class="rule-banner purple">
+    <strong>The cost curve is independent of weapon type.</strong> Greatsword L130 costs the same XP as Longbow L130 — verified across all 9 weapon families.
+    <span class="rnote">Quartic polynomial fitted to 23 measured anchor points. Max residual ±0.077%.</span>
   </div>
 
-  <div class="session-result" id="sesResult"></div>
+  <div class="btn-row">
+    <button class="btn active" id="btnPL" onclick="setChart('perlevel')">Per-Level Cost</button>
+    <button class="btn" id="btnCU" onclick="setChart('cumul')">Cumulative</button>
+    <button class="btn" id="btnTM" onclick="setChart('tomax')">To Max</button>
+  </div>
+  <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
 
-  <div class="card" style="margin-top:16px">
-    <h3>Buff Comparison — Same Token Burn</h3>
-    <div id="sesCompare" style="font-size:0.82rem"></div>
+  <div class="card">
+    <div class="card-title">Range Calculator</div>
+    <div class="input-row">
+      <label>From level</label>
+      <input type="number" id="rcFrom" value="130" min="0" max="200" oninput="calcRange()"/>
+    </div>
+    <div class="input-row">
+      <label>To level</label>
+      <input type="number" id="rcTo" value="200" min="0" max="200" oninput="calcRange()"/>
+    </div>
+    <div class="result-main" style="margin:8px 0 0">
+      <div class="result-label" id="rcLabel">L130 → L200</div>
+      <div class="result-big" id="rcBig">—</div>
+      <div class="result-sub" id="rcSub">—</div>
+    </div>
   </div>
 
 </div>
 
-<!-- ═══════════════════════════════ LOOKUP TABLE ═══════════════════════════════ -->
-<div class="page" id="tab-table">
+<!-- ==================== TABLE ==================== -->
+<div class="section" id="sec-table">
+
+  <div class="rule-banner">
+    <strong>Full L0–L200 lookup.</strong> Per-level XP cost, cumulative from L0, and XP remaining to max. ★ = your weapon levels (set on the Weapons tab).
+  </div>
+
   <div class="card" style="padding:0;overflow:hidden">
-    <div class="tbl-header">
-      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.05em">Full L0–L200 Lookup · ★ = your weapons · ◄ = pool runs out</div>
-      <input class="search-box" type="number" placeholder="Jump to level…" min="0" max="200" oninput="jumpToLevel(this.value)">
+    <div class="ltbl-header">
+      <div class="lbl">Tap a row to highlight</div>
+      <input type="number" placeholder="Jump to level…" min="0" max="200" oninput="jumpToLevel(this.value)"/>
     </div>
-    <div class="ltable-wrap" id="ltableWrap">
-      <table class="ltable">
+    <div class="ltbl-wrap" id="ltblWrap">
+      <table class="ltbl">
         <thead><tr>
           <th>Lvl</th>
-          <th style="text-align:right">Per-Level XP</th>
-          <th style="text-align:right">Cumulative (0→L)</th>
-          <th style="text-align:right">XP to Max</th>
-          <th style="text-align:right">% Done</th>
+          <th>Per-Level XP</th>
+          <th>Cumulative</th>
+          <th>XP to Max</th>
+          <th>% Done</th>
         </tr></thead>
         <tbody id="ltBody"></tbody>
       </table>
     </div>
   </div>
+
 </div>
 
+<!-- ==================== MATH ==================== -->
+<div class="section" id="sec-math">
+
+  <div class="rule-banner purple">
+    <strong>The model.</strong> Per-level XP cost is a quartic polynomial f(L) fitted by least-squares to 23 in-game measurements spanning L50 to L174.
+    <span class="rnote">Max residual ±0.077% across all measured points. Verified weapon-type independent (Longbow + Spear at same level = identical cost).</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Core Formulas</div>
+    <div class="fblock">f(L) = c₄L⁴ + c₃L³ + c₂L² + c₁L + c₀</div>
+    <div class="fblock">C(L) = Σ f(N) for N = 0 to L-1<br>= cumulative XP to reach level L</div>
+    <div class="fblock">Mastery XP per kill = Base_Mob_XP × (1 + Total_Mastery%)</div>
+    <div class="fblock">Tokens / kill ≈ floor(Base_Tokens / (1 + Efficiency%))</div>
+    <div class="fblock">XP / token = <span class="hi">638.7</span> × (1 + mastery%) × (1 + efficiency%)</div>
+    <div class="fex">Example — Amitoi only (5.1% / 7.0%): 638.7 × 1.051 × 1.07 = <span class="exv">718 XP/token</span></div>
+    <div class="fex">Example — Full stack (150% / 18.5%): 638.7 × 2.5 × 1.185 = <span class="exv">1,892 XP/token</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Key Numbers</div>
+    <p>• <span class="hi">L0 → L200 total cost:</span> 1,186,206,907 XP</p>
+    <p>• <span class="hi">Cost at L0:</span> 590,292 XP (extrapolated — no in-game data below L50)</p>
+    <p>• <span class="hi">Cost at L200:</span> 19,253,922 XP</p>
+    <p>• <span class="hi">Base XP per base token:</span> 638.7 (Mutant Slaughterer measurement: 31,935 XP / 50 tokens)</p>
+    <p>• <span class="hi">Levels per week at 80k tokens, full stack:</span> ~150M XP/week → varies wildly by current level (L50 = 60+ levels/week, L180 = ~10 levels/week, L195+ = &lt; 8)</p>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">Anchor zones (the measured data)</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>23 in-game screenshots of weapon mastery XP costs were taken at:</p>
+      <p>• <span class="hi">L50–L54</span> on Greatsword</p>
+      <p>• <span class="hi">L80–L84</span> on Greatsword</p>
+      <p>• <span class="hi">L100–L103</span> on Daggers</p>
+      <p>• <span class="hi">L130–L134</span> on Longbow</p>
+      <p>• <span class="hi">L150–L155</span> on Longbow (spot-test confirmation)</p>
+      <p>• <span class="hi">L170–L174</span> on Spear</p>
+      <p>Longbow and Spear at L130 returned identical per-level costs — confirming the curve is weapon-type independent. Spot tests verified the fit holds across the range.</p>
+      <p class="cnote">L0–L49 has no measured data; the model extrapolates. Predicted L0 = 590,292 XP. Anyone with a fresh weapon can verify by reading the cost off the in-game UI.</p>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="coll-hdr" onclick="toggleColl(this)"><span class="ch-title">Why quartic?</span><span class="ch-arr">▼</span></div>
+    <div class="coll-body">
+      <p>Second differences of per-level costs <span class="hi">grow with level</span> rather than staying constant — ruling out a quadratic model.</p>
+      <p>A cubic fit produced a systematic ~2% underestimate at mid-levels (L80, L130) — implying a higher-degree term.</p>
+      <p>Quartic (degree 4) brings max residual to ±0.077% — well inside typical UI rounding. Higher degrees overfit without measurable accuracy gain on the anchor data.</p>
+      <p class="cnote">Anyone wanting to verify can pull a weapon's cost from the in-game UI at any unfitted level and compare. Discrepancies welcome — submit an issue and the coefficients will be re-fit.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Sources &amp; Credits</div>
+    <p>• <span class="hi">XP cost data:</span> in-game screenshots, 2026-05-27 patch</p>
+    <p>• <span class="hi">Base XP per token:</span> Mutant Slaughterer YouTube experiment (31,935 XP / 50 tokens)</p>
+    <p>• <span class="hi">Buff values:</span> in-game tooltips + Amitoi panel screenshots</p>
+    <p>• <span class="hi">Source code:</span> <a href="https://github.com/stoopkid713/tl-mastery-planner" style="color:var(--purple2);text-decoration:none">github.com/stoopkid713/tl-mastery-planner</a> — fork, edit, submit issues</p>
+  </div>
+
+</div>
+
+</div><!-- /app -->
+
 <script>
-// ═══════════════════════════ DATA ═══════════════════════════
+// ═══════════════════ DATA ═══════════════════
 const TABLE=[{lv:0,cost:590292,cum:0,toMax:1205460829},{lv:1,cost:603640,cum:590292,toMax:1204870537},{lv:2,cost:617515,cum:1193932,toMax:1204266897},{lv:3,cost:631909,cum:1811447,toMax:1203649382},{lv:4,cost:646815,cum:2443356,toMax:1203017473},{lv:5,cost:662224,cum:3090171,toMax:1202370658},{lv:6,cost:678129,cum:3752395,toMax:1201708434},{lv:7,cost:694524,cum:4430524,toMax:1201030305},{lv:8,cost:711402,cum:5125048,toMax:1200335781},{lv:9,cost:728757,cum:5836450,toMax:1199624379},{lv:10,cost:746581,cum:6565207,toMax:1198895622},{lv:11,cost:764869,cum:7311788,toMax:1198149041},{lv:12,cost:783615,cum:8076657,toMax:1197384172},{lv:13,cost:802814,cum:8860272,toMax:1196600557},{lv:14,cost:822461,cum:9663086,toMax:1195797743},{lv:15,cost:842550,cum:10485547,toMax:1194975282},{lv:16,cost:863076,cum:11328097,toMax:1194132732},{lv:17,cost:884036,cum:12191173,toMax:1193269656},{lv:18,cost:905424,cum:13075209,toMax:1192385620},{lv:19,cost:927237,cum:13980633,toMax:1191480196},{lv:20,cost:949472,cum:14907870,toMax:1190552959},{lv:21,cost:972123,cum:15857342,toMax:1189603487},{lv:22,cost:995189,cum:16829465,toMax:1188631364},{lv:23,cost:1018666,cum:17824654,toMax:1187636175},{lv:24,cost:1042551,cum:18843320,toMax:1186617509},{lv:25,cost:1066842,cum:19885871,toMax:1185574958},{lv:26,cost:1091537,cum:20952713,toMax:1184508116},{lv:27,cost:1116633,cum:22044250,toMax:1183416579},{lv:28,cost:1142128,cum:23160883,toMax:1182299946},{lv:29,cost:1168022,cum:24303011,toMax:1181157818},{lv:30,cost:1194312,cum:25471033,toMax:1179989796},{lv:31,cost:1220998,cum:26665345,toMax:1178795484},{lv:32,cost:1248079,cum:27886343,toMax:1177574486},{lv:33,cost:1275554,cum:29134422,toMax:1176326407},{lv:34,cost:1303423,cum:30409976,toMax:1175050853},{lv:35,cost:1331686,cum:31713399,toMax:1173747430},{lv:36,cost:1360343,cum:33045085,toMax:1172415744},{lv:37,cost:1389394,cum:34405428,toMax:1171055401},{lv:38,cost:1418841,cum:35794822,toMax:1169666007},{lv:39,cost:1448683,cum:37213663,toMax:1168247166},{lv:40,cost:1478923,cum:38662346,toMax:1166798483},{lv:41,cost:1509562,cum:40141269,toMax:1165319560},{lv:42,cost:1540600,cum:41650831,toMax:1163809998},{lv:43,cost:1572041,cum:43191431,toMax:1162269398},{lv:44,cost:1603886,cum:44763472,toMax:1160697357},{lv:45,cost:1636138,cum:46367358,toMax:1159093471},{lv:46,cost:1668800,cum:48003496,toMax:1157457333},{lv:47,cost:1701873,cum:49672296,toMax:1155788533},{lv:48,cost:1735362,cum:51374169,toMax:1154086660},{lv:49,cost:1769270,cum:53109531,toMax:1152351298},{lv:50,cost:1803600,cum:54878801,toMax:1150582028},{lv:51,cost:1838357,cum:56682401,toMax:1148778428},{lv:52,cost:1873543,cum:58520758,toMax:1146940071},{lv:53,cost:1909165,cum:60394301,toMax:1145066528},{lv:54,cost:1945226,cum:62303466,toMax:1143157363},{lv:55,cost:1981732,cum:64248692,toMax:1141212137},{lv:56,cost:2018687,cum:66230424,toMax:1139230405},{lv:57,cost:2056097,cum:68249111,toMax:1137211718},{lv:58,cost:2093967,cum:70305208,toMax:1135155621},{lv:59,cost:2132303,cum:72399175,toMax:1133061654},{lv:60,cost:2171112,cum:74531478,toMax:1130929351},{lv:61,cost:2210400,cum:76702590,toMax:1128758239},{lv:62,cost:2250173,cum:78912990,toMax:1126547839},{lv:63,cost:2290438,cum:81163163,toMax:1124297666},{lv:64,cost:2331203,cum:83453601,toMax:1122007228},{lv:65,cost:2372474,cum:85784804,toMax:1119676025},{lv:66,cost:2414259,cum:88157278,toMax:1117303551},{lv:67,cost:2456567,cum:90571537,toMax:1114889292},{lv:68,cost:2499405,cum:93028104,toMax:1112432725},{lv:69,cost:2542781,cum:95527509,toMax:1109933320},{lv:70,cost:2586704,cum:98070290,toMax:1107390539},{lv:71,cost:2631184,cum:100656994,toMax:1104803835},{lv:72,cost:2676228,cum:103288178,toMax:1102172651},{lv:73,cost:2721846,cum:105964406,toMax:1099496423},{lv:74,cost:2768049,cum:108686252,toMax:1096774577},{lv:75,cost:2814845,cum:111454301,toMax:1094006528},{lv:76,cost:2862245,cum:114269146,toMax:1091191683},{lv:77,cost:2910260,cum:117131391,toMax:1088329438},{lv:78,cost:2958899,cum:120041651,toMax:1085419178},{lv:79,cost:3008173,cum:123000550,toMax:1082460279},{lv:80,cost:3058094,cum:126008723,toMax:1079452106},{lv:81,cost:3108673,cum:129066817,toMax:1076394012},{lv:82,cost:3159921,cum:132175490,toMax:1073285339},{lv:83,cost:3211851,cum:135335411,toMax:1070125418},{lv:84,cost:3264473,cum:138547262,toMax:1066913567},{lv:85,cost:3317802,cum:141811735,toMax:1063649094},{lv:86,cost:3371848,cum:145129537,toMax:1060331292},{lv:87,cost:3426625,cum:148501385,toMax:1056959444},{lv:88,cost:3482146,cum:151928010,toMax:1053532819},{lv:89,cost:3538425,cum:155410156,toMax:1050050673},{lv:90,cost:3595474,cum:158948581,toMax:1046512248},{lv:91,cost:3653308,cum:162544055,toMax:1042916774},{lv:92,cost:3711940,cum:166197363,toMax:1039263466},{lv:93,cost:3771385,cum:169909303,toMax:1035551526},{lv:94,cost:3831658,cum:173680688,toMax:1031780141},{lv:95,cost:3892772,cum:177512346,toMax:1027948483},{lv:96,cost:3954744,cum:181405118,toMax:1024055711},{lv:97,cost:4017588,cum:185359862,toMax:1020100967},{lv:98,cost:4081321,cum:189377450,toMax:1016083379},{lv:99,cost:4145956,cum:193458771,toMax:1012002058},{lv:100,cost:4211512,cum:197604727,toMax:1007856102},{lv:101,cost:4278003,cum:201816239,toMax:1003644590},{lv:102,cost:4345447,cum:206094242,toMax:999366587},{lv:103,cost:4413860,cum:210439689,toMax:995021140},{lv:104,cost:4483259,cum:214853549,toMax:990607280},{lv:105,cost:4553662,cum:219336808,toMax:986124021},{lv:106,cost:4625086,cum:223890470,toMax:981570359},{lv:107,cost:4697548,cum:228515556,toMax:976945273},{lv:108,cost:4771067,cum:233213104,toMax:972247725},{lv:109,cost:4845661,cum:237984171,toMax:967476658},{lv:110,cost:4921348,cum:242829832,toMax:962630997},{lv:111,cost:4998148,cum:247751180,toMax:957709649},{lv:112,cost:5076078,cum:252749328,toMax:952711501},{lv:113,cost:5155159,cum:257825406,toMax:947635423},{lv:114,cost:5235409,cum:262980565,toMax:942480264},{lv:115,cost:5316849,cum:268215974,toMax:937244855},{lv:116,cost:5399499,cum:273532823,toMax:931928006},{lv:117,cost:5483378,cum:278932322,toMax:926528507},{lv:118,cost:5568507,cum:284415700,toMax:921045129},{lv:119,cost:5654907,cum:289984207,toMax:915476622},{lv:120,cost:5742599,cum:295639114,toMax:909821715},{lv:121,cost:5831604,cum:301381713,toMax:904079116},{lv:122,cost:5921943,cum:307213317,toMax:898247512},{lv:123,cost:6013639,cum:313135260,toMax:892325569},{lv:124,cost:6106712,cum:319148899,toMax:886311930},{lv:125,cost:6201186,cum:325255611,toMax:880205218},{lv:126,cost:6297083,cum:331456797,toMax:874004032},{lv:127,cost:6394425,cum:337753880,toMax:867706949},{lv:128,cost:6493235,cum:344148305,toMax:861312524},{lv:129,cost:6593537,cum:350641540,toMax:854819289},{lv:130,cost:6695354,cum:357235077,toMax:848225752},{lv:131,cost:6798710,cum:363930431,toMax:841530398},{lv:132,cost:6903628,cum:370729141,toMax:834731688},{lv:133,cost:7010133,cum:377632769,toMax:827828060},{lv:134,cost:7118249,cum:384642902,toMax:820817927},{lv:135,cost:7228000,cum:391761151,toMax:813699678},{lv:136,cost:7339413,cum:398989151,toMax:806471678},{lv:137,cost:7452511,cum:406328564,toMax:799132265},{lv:138,cost:7567321,cum:413781075,toMax:791679754},{lv:139,cost:7683868,cum:421348396,toMax:784112433},{lv:140,cost:7802178,cum:429032264,toMax:776428565},{lv:141,cost:7922276,cum:436834442,toMax:768626387},{lv:142,cost:8044190,cum:444756718,toMax:760704111},{lv:143,cost:8167947,cum:452800908,toMax:752659921},{lv:144,cost:8293572,cum:460968855,toMax:744491974},{lv:145,cost:8421093,cum:469262427,toMax:736198402},{lv:146,cost:8550538,cum:477683520,toMax:727777309},{lv:147,cost:8681934,cum:486234058,toMax:719226771},{lv:148,cost:8815309,cum:494915992,toMax:710544837},{lv:149,cost:8950691,cum:503731301,toMax:701729528},{lv:150,cost:9088108,cum:512681992,toMax:692778837},{lv:151,cost:9227590,cum:521770100,toMax:683690729},{lv:152,cost:9369165,cum:530997690,toMax:674463139},{lv:153,cost:9512862,cum:540366855,toMax:665093974},{lv:154,cost:9658710,cum:549879717,toMax:655581112},{lv:155,cost:9806740,cum:559538427,toMax:645922402},{lv:156,cost:9956981,cum:569345167,toMax:636115662},{lv:157,cost:10109462,cum:579302148,toMax:626158681},{lv:158,cost:10264216,cum:589411610,toMax:616049219},{lv:159,cost:10421271,cum:599675826,toMax:605785003},{lv:160,cost:10580659,cum:610097097,toMax:595363732},{lv:161,cost:10742411,cum:620677756,toMax:584783073},{lv:162,cost:10906559,cum:631420167,toMax:574040662},{lv:163,cost:11073134,cum:642326726,toMax:563134103},{lv:164,cost:11242167,cum:653399860,toMax:552060969},{lv:165,cost:11413692,cum:664642027,toMax:540818802},{lv:166,cost:11587739,cum:676055719,toMax:529405110},{lv:167,cost:11764343,cum:687643458,toMax:517817371},{lv:168,cost:11943535,cum:699407801,toMax:506053028},{lv:169,cost:12125348,cum:711351336,toMax:494109493},{lv:170,cost:12309817,cum:723476684,toMax:481984145},{lv:171,cost:12496975,cum:735786501,toMax:469674328},{lv:172,cost:12686855,cum:748283476,toMax:457177353},{lv:173,cost:12879491,cum:760970331,toMax:444490498},{lv:174,cost:13074919,cum:773849822,toMax:431611007},{lv:175,cost:13273172,cum:786924741,toMax:418536088},{lv:176,cost:13474285,cum:800197913,toMax:405262916},{lv:177,cost:13678293,cum:813672198,toMax:391788631},{lv:178,cost:13885232,cum:827350491,toMax:378110338},{lv:179,cost:14095137,cum:841235723,toMax:364225106},{lv:180,cost:14308044,cum:855330860,toMax:350129969},{lv:181,cost:14523989,cum:869638904,toMax:335821925},{lv:182,cost:14743009,cum:884162893,toMax:321297936},{lv:183,cost:14965139,cum:898905902,toMax:306554927},{lv:184,cost:15190417,cum:913871041,toMax:291589788},{lv:185,cost:15418879,cum:929061458,toMax:276399371},{lv:186,cost:15650564,cum:944480337,toMax:260980492},{lv:187,cost:15885508,cum:960130901,toMax:245329928},{lv:188,cost:16123749,cum:976016409,toMax:229444420},{lv:189,cost:16365326,cum:992140158,toMax:213320671},{lv:190,cost:16610276,cum:1008505484,toMax:196955345},{lv:191,cost:16858638,cum:1025115760,toMax:180345069},{lv:192,cost:17110451,cum:1041974398,toMax:163486431},{lv:193,cost:17365754,cum:1059084849,toMax:146375980},{lv:194,cost:17624587,cum:1076450603,toMax:129010226},{lv:195,cost:17886987,cum:1094075190,toMax:111385639},{lv:196,cost:18152997,cum:1111962177,toMax:93498652},{lv:197,cost:18422655,cum:1130115174,toMax:75345655},{lv:198,cost:18696001,cum:1148537829,toMax:56923000},{lv:199,cost:18973077,cum:1167233830,toMax:38226999},{lv:200,cost:19253922,cum:1186206907,toMax:19253922}];
 const TOTAL=1186206907;
+const BASE=638.7;
 
-// ═══════════════════════════ BUFFS ═══════════════════════════
+// AMITOI editable state (single buff with editable values)
+let amitoi={m:5.1,e:7.0};
+
+// Other buffs are toggleable
 const BUFFS=[
-  {id:'amatori',  name:'Amatori Passive',        mastery:5.1,  eff:7.0,  dur:null,    default:true,  desc:'Always active — base bonus from your Amatori',pills:[{t:'+5.1% Mastery',c:'m'},{t:'+7% Efficiency',c:'e'}]},
-  {id:'palsynergy',name:'Pal Synergy',            mastery:4.9,  eff:1.5,  dur:null,    default:false, desc:'Extra boost when Pal Synergy is active',pills:[{t:'+4.9% Mastery',c:'m'},{t:'+1.5% Efficiency',c:'e'}]},
-  {id:'guildblessing',name:'Guild Blessing Lv.3', mastery:10,   eff:0,    dur:'24hr',  default:false, desc:'Costs 454K Sollant + 2,840 Rock — 24hr buff',pills:[{t:'+10% Mastery',c:'m'},{t:'24hr',c:'dur'}]},
-  {id:'masteryreport',name:'Mastery Report',       mastery:30,   eff:0,    dur:'30min', default:false, desc:'Consumed on token use — limited event item',pills:[{t:'+30% Mastery',c:'m'},{t:'30min',c:'dur'}]},
-  {id:'food',     name:'Golden Apple Pie',         mastery:50,   eff:10,   dur:'30min', default:false, desc:'+50% mastery and +10% token efficiency — 30min food',pills:[{t:'+50% Mastery',c:'m'},{t:'+10% Efficiency',c:'e'},{t:'30min',c:'dur'}]},
-  {id:'blackanvil',name:'Black Anvil Weapon',      mastery:50,   eff:0,    dur:null,    default:false, desc:'Passive — does not stack with other Black Anvil effects',pills:[{t:'+50% Mastery',c:'m'}]},
+  {id:'food',         name:'Golden Apple Pie', icon:'🥧', m:50, e:10, dur:'30 min',  on:true,  desc:'Biggest single buff. Always eat one before a burn session.', pills:[{t:'+50% Mastery',c:'m'},{t:'+10% Eff',c:'e'},{t:'30 min',c:'dur'}]},
+  {id:'blackanvil',   name:'Black Anvil Weapon', icon:'⚒️', m:50, e:0,  dur:'passive', on:false, desc:'Passive while wielding the Black Anvil weapon. Doesn\'t stack across multiple Black Anvil weapons.', pills:[{t:'+50% Mastery',c:'m'},{t:'passive',c:'dur'}]},
+  {id:'masteryreport',name:'Mastery Report',     icon:'📜', m:30, e:0,  dur:'30 min',  on:false, desc:'Limited event item — consumed when you use tokens. Save for full-stack burns.', pills:[{t:'+30% Mastery',c:'m'},{t:'30 min',c:'dur'}]},
+  {id:'guildblessing',name:'Guild Blessing Lv.3',icon:'⛩️', m:10, e:0,  dur:'24 hr',   on:false, desc:'24-hour Mastery buff. Costs 454K Sollant + 2,840 Rock to craft. Requires Lv.3 guild facility.', pills:[{t:'+10% Mastery',c:'m'},{t:'24 hr',c:'dur'}]},
 ];
 
-// ═══════════════════════════ WEAPONS ═══════════════════════════
+// User's weapons
 const WEAPONS=[
-  {icon:'⚔️', name:'Greatsword',  cur:50,  tgt:200},
-  {icon:'🗡️', name:'Daggers',     cur:51,  tgt:200},
-  {icon:'🏹', name:'Crossbow',    cur:200, tgt:200},
-  {icon:'🔮', name:'Wand',        cur:200, tgt:200},
-  {icon:'⚔️', name:'Sword',       cur:174, tgt:200},
-  {icon:'🏹', name:'Longbow',     cur:130, tgt:200},
-  {icon:'🪄', name:'Staff',       cur:50,  tgt:200},
-  {icon:'🔱', name:'Spear',       cur:170, tgt:200},
-  {icon:'⭕', name:'Orb',         cur:200, tgt:200},
+  {icon:'⚔️', name:'Greatsword', cur:50,  tgt:200},
+  {icon:'🗡️', name:'Daggers',    cur:51,  tgt:200},
+  {icon:'🏹', name:'Crossbow',   cur:200, tgt:200},
+  {icon:'🔮', name:'Wand',       cur:200, tgt:200},
+  {icon:'⚔️', name:'Sword',      cur:174, tgt:200},
+  {icon:'🏹', name:'Longbow',    cur:130, tgt:200},
+  {icon:'🪄', name:'Staff',      cur:50,  tgt:200},
+  {icon:'🔱', name:'Spear',      cur:170, tgt:200},
+  {icon:'⭕', name:'Orb',        cur:200, tgt:200},
 ];
-const MY_WEAPON_LVS=new Set(WEAPONS.map(w=>w.cur));
 
-const BASE_XP_PER_BASE_TOKEN=638.7;
-
-// ═══════════════════════════ STATE ═══════════════════════════
-let buffState={};
-BUFFS.forEach(b=>buffState[b.id]=b.default);
-let chartMode='perlevel';
-let myChart=null;
-
-// ═══════════════════════════ HELPERS ═══════════════════════════
-const fmt=n=>Math.round(n).toLocaleString();
-const fmtM=n=>n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(1)+'M':fmt(n);
-const fmtW=w=>w>=52?`${(w/52).toFixed(1)}y`:`${w.toFixed(1)}w`;
-
+// ═══════════════════ MATH ═══════════════════
 function getStats(){
-  let m=0,e=0;
-  BUFFS.forEach(b=>{if(buffState[b.id]){m+=b.mastery;e+=b.eff;}});
-  return {mastery:m/100,eff:e/100};
+  let m=amitoi.m, e=amitoi.e;
+  BUFFS.forEach(b=>{if(b.on){m+=b.m;e+=b.e}});
+  return {m:m/100, e:e/100};
 }
-function getMaxStats(){
-  let m=0,e=0;
-  BUFFS.forEach(b=>{m+=b.mastery;e+=b.eff;});
-  return {mastery:m/100,eff:e/100};
+function xpPerToken(m,e,base){return (base||BASE)*(1+m)*(1+e);}
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtM(n){
+  if(n>=1e9)return(n/1e9).toFixed(2)+'B';
+  if(n>=1e6)return(n/1e6).toFixed(2)+'M';
+  if(n>=1e3)return(n/1e3).toFixed(1)+'K';
+  return Math.round(n).toString();
 }
-function xpPerToken(mastery,eff,base){
-  return (base||BASE_XP_PER_BASE_TOKEN)*(1+mastery)*(1+eff);
-}
-function poolRunout(pool){
-  for(let i=0;i<TABLE.length-1;i++){if(TABLE[i+1].cum>pool)return i;}
-  return 200;
-}
-
-// ═══════════════════════════ TABS ═══════════════════════════
-function showTab(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  event.target.classList.add('active');
-  if(id==='table') renderLookupTable();
+function xpFrom(startLv,endLv){
+  if(endLv<=startLv)return 0;
+  return TABLE[endLv].cum-TABLE[startLv].cum;
 }
 
-// ═══════════════════════════ BUFF GRID ═══════════════════════════
-function buildBuffGrid(){
-  const g=document.getElementById('buffGrid');
-  g.innerHTML='';
-  BUFFS.forEach(b=>{
-    const d=document.createElement('div');
-    d.className='buff-toggle'+(buffState[b.id]?' on':'');
-    d.id='btoggle_'+b.id;
-    d.innerHTML=`<div class="buff-check">${buffState[b.id]?'✓':''}</div>
-    <div class="buff-info">
-      <div class="name">${b.name}</div>
-      <div class="desc">${b.desc}</div>
-      <div class="pills">${b.pills.map(p=>`<span class="pill ${p.c}">${p.t}</span>`).join('')}</div>
-    </div>`;
-    d.onclick=()=>{
-      buffState[b.id]=!buffState[b.id];
-      d.classList.toggle('on',buffState[b.id]);
-      d.querySelector('.buff-check').textContent=buffState[b.id]?'✓':'';
-      updateAll();
-    };
-    g.appendChild(d);
-  });
+// ═══════════════════ TABS ═══════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='curve')drawChart();
 }
 
-// ═══════════════════════════ SUMMARY CARDS ═══════════════════════════
-function updateSummaryCards(){
-  const {mastery,eff}=getStats();
-  const xpt=xpPerToken(mastery,eff);
-  const bare=xpPerToken(0,0);
-  document.getElementById('sTotalMastery').textContent=`${(mastery*100).toFixed(1)}%`;
-  document.getElementById('sTotalEff').textContent=`${(eff*100).toFixed(1)}%`;
-  document.getElementById('sXpPerToken').textContent=fmt(xpt);
-  document.getElementById('sMultiplier').textContent=`${(xpt/bare).toFixed(2)}×`;
+// ═══════════════════ COLLAPSIBLE ═══════════════════
+function toggleColl(el){
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
 }
 
-// ═══════════════════════════ CHART ═══════════════════════════
-function setChart(mode){
-  chartMode=mode;
-  ['btnPL','btnCU','btnTM'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  document.getElementById({perlevel:'btnPL',cumul:'btnCU',tomax:'btnTM'}[mode]).classList.add('active');
-  renderChart();
-}
-function renderChart(){
-  const ctx=document.getElementById('mainChart').getContext('2d');
-  if(myChart)myChart.destroy();
-  let data,color,label;
-  if(chartMode==='perlevel'){data=TABLE.map(r=>r.cost);color='#58a6ff';label='Per-Level XP';}
-  else if(chartMode==='cumul'){data=TABLE.map(r=>r.cum);color='#a371f7';label='Cumulative XP';}
-  else{data=TABLE.map(r=>r.toMax);color='#f85149';label='XP to Max';}
-  myChart=new Chart(ctx,{type:'line',data:{labels:TABLE.map(r=>r.lv),datasets:[{label,data,borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:0,pointHoverRadius:5,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c2128',borderColor:'#30363d',borderWidth:1,titleColor:'#f0f6fc',bodyColor:'#c9d1d9',callbacks:{title:ctx=>'Level '+ctx[0].label,label:ctx=>{const r=TABLE[ctx[0].dataIndex];return['Per-level: '+fmt(r.cost),'Cumulative: '+fmtM(r.cum),'To max: '+fmtM(r.toMax)];}}}},scales:{x:{ticks:{color:'#8b949e',maxTicksLimit:20,font:{size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>fmtM(v)},grid:{color:'#21262d'}}}}});
+// ═══════════════════ AMITOI ═══════════════════
+function setAmitoi(m,e){
+  document.getElementById('amM').value=m;
+  document.getElementById('amE').value=e;
+  updateStats();
 }
 
-// ═══════════════════════════ RANGE CALC ═══════════════════════════
-function calcRange(){
-  const from=Math.max(0,Math.min(200,parseInt(document.getElementById('rcFrom').value)||0));
-  const to=Math.max(0,Math.min(200,parseInt(document.getElementById('rcTo').value)||200));
-  const lo=Math.min(from,to),hi=Math.max(from,to);
-  const xp=TABLE[hi].cum-TABLE[lo].cum;
-  const {mastery,eff}=getStats();
-  const xpt=xpPerToken(mastery,eff);
-  const weeks=parseInt(document.getElementById('weeklyTokens')?.value||80000);
-  const weeklyXp=weeks*xpt;
-  const weeksNeeded=xp/weeklyXp;
-  const pct=(xp/TOTAL*100).toFixed(2);
-  document.getElementById('rcResult').innerHTML=
-    `<b>L${lo} → L${hi}</b> &nbsp;(${hi-lo} levels) &nbsp;<span style="color:#484f58">${pct}% of total 0→200</span><br>`+
-    `XP needed: <span style="color:#58a6ff;font-size:1.05rem;font-weight:700">${fmt(xp)}</span><br>`+
-    `At your current setup (${(mastery*100).toFixed(1)}% mastery / ${(eff*100).toFixed(1)}% eff): `+
-    `<span style="color:#3fb950">${fmtW(weeksNeeded)}</span> &nbsp;`+
-    `<span style="color:#484f58;font-size:0.75rem">(${fmt(weeklyXp)} XP/week from ${fmt(weeks)} tokens)</span>`;
+// ═══════════════════ BUFFS RENDER ═══════════════════
+function renderBuffs(){
+  const list=document.getElementById('buffList');
+  list.innerHTML=BUFFS.map(b=>`
+    <div class="buff-card ${b.on?'on':''}" onclick="toggleBuff('${b.id}')">
+      <div class="bc-row">
+        <div class="bc-icon">${b.icon}</div>
+        <div class="bc-body">
+          <div class="bc-name">${b.name}<div class="bc-toggle"></div></div>
+          <div class="bc-desc">${b.desc}</div>
+          <div class="bc-pills">${b.pills.map(p=>`<span class="pill ${p.c}">${p.t}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleBuff(id){
+  const b=BUFFS.find(x=>x.id===id);
+  if(b){b.on=!b.on;updateStats();}
 }
 
-// ═══════════════════════════ WEAPON PLANNER ═══════════════════════════
-function buildWeaponRows(){
-  const tbody=document.getElementById('weaponBody');
-  tbody.innerHTML='';
-  WEAPONS.forEach((w,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class="weapon-icon">${w.icon}</span>${w.name}</td>
-      <td><input type="number" id="wcur_${i}" value="${w.cur}" min="0" max="200" oninput="updatePlanner()"></td>
-      <td><input type="number" id="wtgt_${i}" value="${w.tgt}" min="0" max="200" oninput="updatePlanner()"></td>
-      <td id="wxp_${i}" style="color:#8b949e">—</td>
-      <td id="wwks_${i}">—</td>
-      <td id="wwksmax_${i}" style="color:#8b949e">—</td>`;
-    tbody.appendChild(tr);
-  });
+// ═══════════════════ UPDATE STATS (recompute everything) ═══════════════════
+function updateStats(){
+  amitoi.m=parseFloat(document.getElementById('amM').value)||0;
+  amitoi.e=parseFloat(document.getElementById('amE').value)||0;
+  const {m,e}=getStats();
+  const xpt=xpPerToken(m,e);
+  const mult=xpt/BASE;
+  document.getElementById('sTotalMastery').textContent=(m*100).toFixed(1)+'%';
+  document.getElementById('sTotalEff').textContent=(e*100).toFixed(1)+'%';
+  document.getElementById('sXpPerToken').textContent=Math.round(xpt);
+  document.getElementById('sMultiplier').textContent=mult.toFixed(2)+'×';
+  renderBuffs();
+  calcSession();
+  updatePlanner();
+  if(typeof chart!=='undefined'&&chart)drawChart();
 }
 
-function updatePlanner(){
-  const weeklyTokens=parseInt(document.getElementById('weeklyTokens').value)||80000;
-  const {mastery,eff}=getStats();
-  const {mastery:maxM,eff:maxE}=getMaxStats();
-  const xpt=xpPerToken(mastery,eff);
-  const xptMax=xpPerToken(maxM,maxE);
-  const weeklyXp=weeklyTokens*xpt;
-  const weeklyXpMax=weeklyTokens*xptMax;
-
-  document.getElementById('pWeeklyXp').textContent=fmtM(weeklyXp);
-  document.getElementById('pXpNote').textContent=`${fmt(xpt)} XP/token · ${(mastery*100).toFixed(1)}% mastery`;
-  document.getElementById('pWeeklyXpMax').textContent=fmtM(weeklyXpMax);
-
-  let priorityRows=[];
-  WEAPONS.forEach((w,i)=>{
-    const cur=Math.max(0,Math.min(200,parseInt(document.getElementById('wcur_'+i)?.value)||w.cur));
-    const tgt=Math.max(0,Math.min(200,parseInt(document.getElementById('wtgt_'+i)?.value)||w.tgt));
-    const lo=Math.min(cur,tgt),hi=Math.max(cur,tgt);
-    const xp=TABLE[hi].cum-TABLE[lo].cum;
-    const weeks=xp/weeklyXp;
-    const weeksMax=xp/weeklyXpMax;
-    const done=hi===lo||cur>=tgt;
-
-    document.getElementById('wxp_'+i).textContent=done?'✓ At target':fmtM(xp);
-    if(done){
-      document.getElementById('wwks_'+i).innerHTML=`<span style="color:#3fb950">✓ Done</span>`;
-      document.getElementById('wwksmax_'+i).innerHTML='—';
-    } else {
-      const pct=Math.min(100,(1-xp/TABLE[hi].cum)*100);
-      document.getElementById('wwks_'+i).innerHTML=
-        `<span style="color:#58a6ff;font-weight:600">${fmtW(weeks)}</span>`+
-        `<div class="weeks-bar"><div class="weeks-fill" style="width:${pct}%"></div></div>`;
-      document.getElementById('wwksmax_'+i).innerHTML=`<span style="color:#8b949e">${fmtW(weeksMax)}</span>`;
-      if(xp>0) priorityRows.push({name:w.icon+' '+w.name,cur,tgt,xp,weeks});
-    }
-  });
-
-  // Priority queue
-  priorityRows.sort((a,b)=>a.xp-b.xp);
-  let html='<table style="border-collapse:collapse;width:100%;font-size:0.8rem">';
-  html+='<tr style="color:#8b949e;font-size:0.72rem"><th style="text-align:left;padding:5px 8px">Weapon</th><th style="text-align:right;padding:5px 8px">XP Needed</th><th style="text-align:right;padding:5px 8px">Weeks</th><th style="text-align:right;padding:5px 8px">Cumulative Weeks</th></tr>';
-  let cumW=0;
-  priorityRows.forEach((r,i)=>{
-    cumW+=r.weeks;
-    html+=`<tr style="border-top:1px solid #21262d"><td style="padding:6px 8px">${r.name} <span style="color:#484f58">L${r.cur}→${r.tgt}</span></td><td style="text-align:right;padding:6px 8px;color:#58a6ff">${fmtM(r.xp)}</td><td style="text-align:right;padding:6px 8px">${fmtW(r.weeks)}</td><td style="text-align:right;padding:6px 8px;color:#a371f7">${fmtW(cumW)}</td></tr>`;
-  });
-  html+='</table>';
-  if(priorityRows.length===0)html='<span style="color:#3fb950">All weapons at target!</span>';
-  document.getElementById('priorityResult').innerHTML=html;
-  calcRange();
-}
-
-// ═══════════════════════════ SESSION CALC ═══════════════════════════
+// ═══════════════════ SESSION ═══════════════════
 function calcSession(){
   const tokens=parseInt(document.getElementById('sesTokens').value)||20000;
   const startLv=Math.max(0,Math.min(199,parseInt(document.getElementById('sesStart').value)||130));
-  const baseXpt=parseFloat(document.getElementById('sesBaseXpPerToken').value)||638.7;
-  const {mastery,eff}=getStats();
-  const xpt=xpPerToken(mastery,eff,baseXpt);
+  const base=parseFloat(document.getElementById('sesBaseXpPerToken').value)||BASE;
+  const {m,e}=getStats();
+  const xpt=xpPerToken(m,e,base);
   const totalXp=tokens*xpt;
 
-  // Find how many levels gained
-  let xpLeft=totalXp;
-  let lvNow=startLv;
-  while(lvNow<200&&xpLeft>=TABLE[lvNow].cost){
-    xpLeft-=TABLE[lvNow].cost;
-    lvNow++;
-  }
-  const lvelsGained=lvNow-startLv;
-  const pctNextLv=lvNow<200?(1-xpLeft/TABLE[lvNow].cost)*100:100;
+  let xpLeft=totalXp,lvNow=startLv;
+  while(lvNow<200&&xpLeft>=TABLE[lvNow].cost){xpLeft-=TABLE[lvNow].cost;lvNow++;}
+  const gained=lvNow-startLv;
+  const pctInto=lvNow<200?(1-xpLeft/TABLE[lvNow].cost)*100:100;
 
-  document.getElementById('sesResult').innerHTML=
-    `<div style="font-size:1rem;font-weight:700;color:#f0f6fc;margin-bottom:8px">Session: ${fmt(tokens)} tokens burned</div>`+
-    `XP gained: <span style="color:#58a6ff;font-weight:700;font-size:1.05rem">${fmtM(totalXp)}</span> &nbsp;`+
-    `<span style="color:#484f58">(${fmt(xpt)} XP/token at ${(mastery*100).toFixed(1)}% mastery / ${(eff*100).toFixed(1)}% eff)</span><br>`+
-    `Starting at L${startLv}: gain <span style="color:#3fb950;font-weight:700">${lvelsGained} level${lvelsGained!==1?'s':''}</span> → reach <span style="color:#ffa657;font-weight:700">L${lvNow}</span><br>`+
-    (lvNow<200?`Progress into L${lvNow}: <span style="color:#a371f7">${pctNextLv.toFixed(1)}%</span> · `+
-    `<span style="color:#484f58">${fmtM(TABLE[lvNow].cost-TABLE[lvNow].cost*(pctNextLv/100))} XP to next level</span>`:'<span style="color:#3fb950">MAX LEVEL REACHED</span>');
+  document.getElementById('sesBig').textContent='+'+gained+' lvl'+(gained!==1?'s':'');
+  document.getElementById('sesSub').innerHTML=
+    `<span style="color:var(--gold2);font-weight:700">L${startLv} → L${lvNow}</span>` +
+    (lvNow<200?` &nbsp;·&nbsp; ${pctInto.toFixed(1)}% into L${lvNow}`:` &nbsp;·&nbsp; <span class="good">MAX</span>`);
+  document.getElementById('sesGap').innerHTML=
+    `<div><div class="gl">Total XP</div><div class="gv" style="color:var(--blue)">${fmtM(totalXp)}</div></div>`+
+    `<div><div class="gl">XP / token</div><div class="gv" style="color:var(--green)">${fmt(xpt)}</div></div>`+
+    `<div><div class="gl">Multiplier</div><div class="gv" style="color:var(--purple2)">${(xpt/base).toFixed(2)}×</div></div>`;
 
-  // Buff comparison table
-  let cmpHtml='<table style="width:100%;border-collapse:collapse;font-size:0.78rem"><tr style="color:#8b949e;font-size:0.72rem"><th style="text-align:left;padding:5px 8px">Setup</th><th style="text-align:right;padding:5px 8px">Mastery%</th><th style="text-align:right;padding:5px 8px">Eff%</th><th style="text-align:right;padding:5px 8px">XP/token</th><th style="text-align:right;padding:5px 8px">XP this session</th><th style="text-align:right;padding:5px 8px">Levels gained</th></tr>';
+  // comparison table — Amitoi-anchored stacks
+  const aM=amitoi.m, aE=amitoi.e;
   const scenarios=[
-    {label:'Bare minimum (Amatori only)',m:0.051,e:0.07},
-    {label:'+ Food',m:0.551,e:0.17},
-    {label:'+ Food + Black Anvil',m:1.051,e:0.17},
-    {label:'+ Food + BA + Mastery Report',m:1.351,e:0.17},
-    {label:'Full stack + Pal Synergy',m:1.50,e:0.185},
+    {label:'Amitoi only',                       m:aM/100,                  e:aE/100},
+    {label:'+ Golden Apple Pie',                m:(aM+50)/100,             e:(aE+10)/100},
+    {label:'+ Pie + Black Anvil',               m:(aM+50+50)/100,          e:(aE+10)/100},
+    {label:'+ Pie + BA + Mastery Report',       m:(aM+50+50+30)/100,       e:(aE+10)/100},
+    {label:'Full stack (incl. Guild Blessing)', m:(aM+50+50+30+10)/100,    e:(aE+10)/100},
   ];
+  let html='<thead><tr><th>Setup</th><th>Mastery</th><th>Eff</th><th>XP/tok</th><th>Session</th><th>Levels</th></tr></thead><tbody>';
   scenarios.forEach(s=>{
-    const xptS=xpPerToken(s.m,s.e,baseXpt);
+    const xptS=xpPerToken(s.m,s.e,base);
     const xpS=tokens*xptS;
     let lv2=startLv,xl=xpS;
     while(lv2<200&&xl>=TABLE[lv2].cost){xl-=TABLE[lv2].cost;lv2++;}
-    const isActive=Math.abs(s.m-mastery)<0.005&&Math.abs(s.e-eff)<0.005;
-    cmpHtml+=`<tr style="border-top:1px solid #21262d${isActive?';background:#1f2d3d':''}">
-      <td style="padding:6px 8px;color:${isActive?'#f0f6fc':'#c9d1d9'}">${isActive?'▶ ':' '}${s.label}</td>
-      <td style="text-align:right;padding:6px 8px;color:#58a6ff">${(s.m*100).toFixed(1)}%</td>
-      <td style="text-align:right;padding:6px 8px;color:#3fb950">${(s.e*100).toFixed(1)}%</td>
-      <td style="text-align:right;padding:6px 8px">${fmt(xptS)}</td>
-      <td style="text-align:right;padding:6px 8px;color:#a371f7">${fmtM(xpS)}</td>
-      <td style="text-align:right;padding:6px 8px;color:#ffa657">+${lv2-startLv} lvls → L${lv2}</td>
+    const isActive=Math.abs(s.m-m)<0.005&&Math.abs(s.e-e)<0.005;
+    html+=`<tr class="${isActive?'cur':''}">
+      <td>${s.label}</td>
+      <td style="color:var(--blue)">${(s.m*100).toFixed(1)}%</td>
+      <td style="color:var(--green)">${(s.e*100).toFixed(1)}%</td>
+      <td>${fmt(xptS)}</td>
+      <td style="color:var(--purple2)">${fmtM(xpS)}</td>
+      <td style="color:var(--orange)">+${lv2-startLv} → L${lv2}</td>
     </tr>`;
   });
-  cmpHtml+='</table>';
-  document.getElementById('sesCompare').innerHTML=cmpHtml;
+  html+='</tbody>';
+  document.getElementById('cmpTbl').innerHTML=html;
 }
 
-// ═══════════════════════════ LOOKUP TABLE ═══════════════════════════
-let ltRendered=false;
-function renderLookupTable(){
-  if(ltRendered)return;
-  ltRendered=true;
-  const tbody=document.getElementById('ltBody');
-  TABLE.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.id='ltr_'+r.lv;
-    if(MY_WEAPON_LVS.has(r.lv))tr.classList.add('mine');
-    const pct=(r.cum/TOTAL*100).toFixed(2);
-    tr.innerHTML=`<td>${r.lv}${MY_WEAPON_LVS.has(r.lv)?'&nbsp;★':''}</td>
-      <td>${fmt(r.cost)}</td><td>${fmt(r.cum)}</td>
-      <td>${fmt(r.toMax)}</td><td style="color:#484f58">${pct}%</td>`;
-    tr.onclick=()=>{
-      document.querySelectorAll('.ltable tr.hl').forEach(e=>e.classList.remove('hl'));
-      tr.classList.add('hl');
-    };
-    tbody.appendChild(tr);
+// ═══════════════════ WEAPONS PLANNER ═══════════════════
+function updatePlanner(){
+  const weeklyTokens=parseInt(document.getElementById('weeklyTokens').value)||80000;
+  const {m,e}=getStats();
+  const xptYou=xpPerToken(m,e);
+  // full stack assumes Amitoi current + every other buff on
+  const fM=(amitoi.m+50+50+30+10)/100;
+  const fE=(amitoi.e+10)/100;
+  const xptFull=xpPerToken(fM,fE);
+  const weeklyXp=weeklyTokens*xptYou;
+  const weeklyXpFull=weeklyTokens*xptFull;
+
+  document.getElementById('pWeeklyXp').textContent=fmtM(weeklyXp);
+  document.getElementById('pWeeklyXpMax').textContent=fmtM(weeklyXpFull);
+
+  // weapon rows
+  let totalNeeded=0,totalDone=0;
+  const wt=WEAPONS.map((w,i)=>{
+    const cur=parseInt(document.getElementById('wCur'+i)?.value)||w.cur;
+    const tgt=parseInt(document.getElementById('wTgt'+i)?.value)||w.tgt;
+    w.cur=cur;w.tgt=tgt;
+    const needed=xpFrom(cur,tgt);
+    const weeksYou=needed/weeklyXp;
+    const weeksFull=needed/weeklyXpFull;
+    totalNeeded+=needed;
+    if(cur>=tgt)totalDone++;
+    return {w,i,cur,tgt,needed,weeksYou,weeksFull};
+  });
+
+  // avg levels/week across non-maxed weapons (approximate)
+  const avgLv=wt.filter(x=>x.cur<x.tgt).reduce((s,x)=>{
+    // approximate levels per week starting at midpoint
+    const mid=Math.floor((x.cur+x.tgt)/2);
+    return s+(weeklyXp/TABLE[Math.min(199,mid)].cost);
+  },0)/Math.max(1,wt.filter(x=>x.cur<x.tgt).length);
+  document.getElementById('pLvlPerWeek').textContent=avgLv?avgLv.toFixed(1):'—';
+
+  document.getElementById('wtblBody').innerHTML=wt.map(({w,i,cur,tgt,needed,weeksYou,weeksFull})=>{
+    const done=cur>=tgt;
+    return `<tr>
+      <td><div class="wname ${done?'wdone':''}"><span class="icon">${w.icon}</span>${w.name}</div></td>
+      <td><input type="number" id="wCur${i}" value="${cur}" min="0" max="200" oninput="updatePlanner()"/></td>
+      <td><input type="number" id="wTgt${i}" value="${tgt}" min="0" max="200" oninput="updatePlanner()"/></td>
+      <td class="${done?'wdone':'wxp'}">${done?'✓ done':fmtM(needed)}</td>
+      <td class="${done?'wdone':'wweeks'}">${done?'—':weeksYou.toFixed(1)+'w'}</td>
+      <td class="${done?'wdone':''}" style="color:var(--green)">${done?'—':weeksFull.toFixed(1)+'w'}</td>
+    </tr>`;
+  }).join('');
+
+  // priority queue
+  const queue=wt.filter(x=>x.cur<x.tgt).sort((a,b)=>a.needed-b.needed);
+  document.getElementById('priorityQueue').innerHTML=queue.length?
+    queue.map((x,idx)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:${idx?'1px solid var(--border)':'none'}">
+      <span><span style="color:var(--gold2);font-weight:700">${idx+1}.</span> ${x.w.icon} ${x.w.name} <span style="color:var(--muted)">L${x.cur}→${x.tgt}</span></span>
+      <span style="color:var(--purple2);font-weight:700">${x.weeksYou.toFixed(1)}w</span>
+    </div>`).join(''):
+    '<span class="good">All weapons at target.</span>';
+}
+
+// ═══════════════════ CHART ═══════════════════
+let chart=null;
+let chartMode='perlevel';
+function setChart(mode){
+  chartMode=mode;
+  ['btnPL','btnCU','btnTM'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(mode==='perlevel'?'btnPL':mode==='cumul'?'btnCU':'btnTM').classList.add('active');
+  drawChart();
+}
+function drawChart(){
+  const ctx=document.getElementById('mainChart');
+  if(!ctx)return;
+  const labels=TABLE.map(r=>r.lv);
+  let data,label,color;
+  if(chartMode==='perlevel'){data=TABLE.map(r=>r.cost);label='Per-Level XP Cost';color='#72c8ff';}
+  else if(chartMode==='cumul'){data=TABLE.map(r=>r.cum);label='Cumulative XP (0 → L)';color='#b899f0';}
+  else{data=TABLE.map(r=>r.toMax);label='XP Remaining to Max';color='#ffb366';}
+  if(chart)chart.destroy();
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:0,pointHoverRadius:4,fill:true,tension:0.1}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#9b90b0',font:{family:'Rajdhani',size:11}}}},
+      scales:{
+        x:{ticks:{color:'#6a5e80',font:{family:'Rajdhani',size:10}},grid:{color:'rgba(140,120,200,0.06)'}},
+        y:{ticks:{color:'#6a5e80',font:{family:'Rajdhani',size:10},callback:v=>fmtM(v)},grid:{color:'rgba(140,120,200,0.06)'}}
+      }
+    }
   });
 }
-function jumpToLevel(v){
-  const lv=Math.max(0,Math.min(200,parseInt(v)));
-  if(isNaN(lv))return;
-  const el=document.getElementById('ltr_'+lv);
-  if(el){el.scrollIntoView({block:'center',behavior:'smooth'});
-    document.querySelectorAll('.ltable tr.hl').forEach(e=>e.classList.remove('hl'));
-    el.classList.add('hl');}
+
+// ═══════════════════ RANGE ═══════════════════
+function calcRange(){
+  const from=Math.max(0,Math.min(200,parseInt(document.getElementById('rcFrom').value)||0));
+  const to=Math.max(0,Math.min(200,parseInt(document.getElementById('rcTo').value)||200));
+  if(to<=from){document.getElementById('rcLabel').textContent='—';document.getElementById('rcBig').textContent='—';document.getElementById('rcSub').textContent='';return;}
+  const xp=xpFrom(from,to);
+  const pct=(xp/TOTAL*100).toFixed(2);
+  const {m,e}=getStats();
+  const xpt=xpPerToken(m,e);
+  const weeklyTokens=parseInt(document.getElementById('weeklyTokens')?.value)||80000;
+  const weeks=xp/(weeklyTokens*xpt);
+  document.getElementById('rcLabel').textContent=`L${from} → L${to}  (${to-from} levels)`;
+  document.getElementById('rcBig').textContent=fmtM(xp)+' XP';
+  document.getElementById('rcSub').innerHTML=`<span style="color:var(--muted)">${pct}% of full 0→200</span> &nbsp;·&nbsp; <span style="color:var(--purple2);font-weight:700">${weeks.toFixed(1)} weeks</span> at your current setup`;
 }
 
-// ═══════════════════════════ MASTER UPDATE ═══════════════════════════
-function updateAll(){
-  updateSummaryCards();
-  renderChart();
-  calcRange();
-  updatePlanner();
-  calcSession();
+// ═══════════════════ LOOKUP TABLE ═══════════════════
+function renderTable(){
+  const myLvs=new Set(WEAPONS.map(w=>w.cur));
+  document.getElementById('ltBody').innerHTML=TABLE.map(r=>{
+    const mine=myLvs.has(r.lv);
+    const pct=(r.cum/TOTAL*100).toFixed(2);
+    const star=mine?'★ ':'';
+    return `<tr class="${mine?'mine':''}" data-lv="${r.lv}" onclick="this.classList.toggle('mine')">
+      <td>${star}${r.lv}</td>
+      <td>${fmt(r.cost)}</td>
+      <td>${fmt(r.cum)}</td>
+      <td>${fmt(r.toMax)}</td>
+      <td style="color:var(--muted)">${pct}%</td>
+    </tr>`;
+  }).join('');
+}
+function jumpToLevel(lv){
+  const n=parseInt(lv);
+  if(isNaN(n)||n<0||n>200)return;
+  const row=document.querySelector(`#ltBody tr[data-lv="${n}"]`);
+  if(row){
+    document.querySelectorAll('#ltBody tr').forEach(r=>r.style.outline='');
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    row.style.outline='1px solid var(--gold)';
+    setTimeout(()=>row.style.outline='',2000);
+  }
 }
 
-// ═══════════════════════════ INIT ═══════════════════════════
-buildBuffGrid();
-buildWeaponRows();
-updateAll();
+// ═══════════════════ INIT ═══════════════════
+renderBuffs();
+renderTable();
+updateStats();
+calcRange();
+drawChart();
 </script>
 </body>
 </html>
