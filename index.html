@@ -732,6 +732,59 @@ function calcSession(){
 }
 
 // ═══════════════════ WEAPONS PLANNER ═══════════════════
+// Number input helper: scroll wheel + Shift/Ctrl arrow keys for faster movement.
+// step = base increment, bigStep = with Shift held. Ctrl uses bigStep/2.
+function attachNumberInput(el,min,max,step,bigStep){
+  if(!el)return;
+  step=step||1; bigStep=bigStep||10;
+  // scroll-wheel inside input changes value
+  el.addEventListener('wheel',e=>{
+    if(document.activeElement!==el)return;
+    e.preventDefault();
+    const s=e.shiftKey?bigStep:step;
+    const cur=parseFloat(el.value)||0;
+    const delta=e.deltaY<0?s:-s;
+    el.value=Math.max(min,Math.min(max,cur+delta));
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  },{passive:false});
+  // Shift/Ctrl + arrow = bigger steps
+  el.addEventListener('keydown',e=>{
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
+    if(!e.shiftKey&&!e.ctrlKey)return;
+    e.preventDefault();
+    const s=e.shiftKey?bigStep:Math.max(1,Math.floor(bigStep/2));
+    const cur=parseFloat(el.value)||0;
+    const delta=e.key==='ArrowUp'?s:-s;
+    el.value=Math.max(min,Math.min(max,cur+delta));
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  // clamp on blur — but only if user actually entered something
+  el.addEventListener('blur',()=>{
+    if(el.value===''||isNaN(parseFloat(el.value)))return;
+    const v=parseFloat(el.value);
+    if(v<min)el.value=min;
+    else if(v>max)el.value=max;
+  });
+}
+
+// Build the weapons table rows ONCE. Inputs are stable across updates.
+function renderWeaponsTable(){
+  document.getElementById('wtblBody').innerHTML=WEAPONS.map((w,i)=>`
+    <tr>
+      <td><div class="wname" id="wName${i}"><span class="icon">${w.icon}</span>${w.name}</div></td>
+      <td><input type="number" id="wCur${i}" value="${w.cur}" min="0" max="200" oninput="updatePlanner()"/></td>
+      <td><input type="number" id="wTgt${i}" value="${w.tgt}" min="0" max="200" oninput="updatePlanner()"/></td>
+      <td id="wXp${i}"></td>
+      <td id="wWeeks${i}"></td>
+      <td id="wWeeksFull${i}"></td>
+    </tr>
+  `).join('');
+  WEAPONS.forEach((_,i)=>{
+    attachNumberInput(document.getElementById('wCur'+i),0,200,1,10);
+    attachNumberInput(document.getElementById('wTgt'+i),0,200,1,10);
+  });
+}
+
 function updatePlanner(){
   const weeklyTokens=parseInt(document.getElementById('weeklyTokens').value)||80000;
   const {m,e}=getStats();
@@ -746,39 +799,50 @@ function updatePlanner(){
   document.getElementById('pWeeklyXp').textContent=fmtM(weeklyXp);
   document.getElementById('pWeeklyXpMax').textContent=fmtM(weeklyXpFull);
 
-  // weapon rows
-  let totalNeeded=0,totalDone=0;
+  // Read levels from inputs WITHOUT touching them.
+  // Empty input = 0 for math; do NOT overwrite el.value (kicks cursor).
   const wt=WEAPONS.map((w,i)=>{
-    const cur=parseInt(document.getElementById('wCur'+i)?.value)||w.cur;
-    const tgt=parseInt(document.getElementById('wTgt'+i)?.value)||w.tgt;
+    const curEl=document.getElementById('wCur'+i);
+    const tgtEl=document.getElementById('wTgt'+i);
+    const cur=curEl&&curEl.value!==''?Math.max(0,Math.min(200,parseInt(curEl.value)||0)):0;
+    const tgt=tgtEl&&tgtEl.value!==''?Math.max(0,Math.min(200,parseInt(tgtEl.value)||0)):0;
     w.cur=cur;w.tgt=tgt;
     const needed=xpFrom(cur,tgt);
-    const weeksYou=needed/weeklyXp;
-    const weeksFull=needed/weeklyXpFull;
-    totalNeeded+=needed;
-    if(cur>=tgt)totalDone++;
+    const weeksYou=weeklyXp>0?needed/weeklyXp:0;
+    const weeksFull=weeklyXpFull>0?needed/weeklyXpFull:0;
     return {w,i,cur,tgt,needed,weeksYou,weeksFull};
   });
 
   // avg levels/week across non-maxed weapons (approximate)
-  const avgLv=wt.filter(x=>x.cur<x.tgt).reduce((s,x)=>{
-    // approximate levels per week starting at midpoint
+  const nonMaxed=wt.filter(x=>x.cur<x.tgt);
+  const avgLv=nonMaxed.length?nonMaxed.reduce((s,x)=>{
     const mid=Math.floor((x.cur+x.tgt)/2);
     return s+(weeklyXp/TABLE[Math.min(199,mid)].cost);
-  },0)/Math.max(1,wt.filter(x=>x.cur<x.tgt).length);
+  },0)/nonMaxed.length:0;
   document.getElementById('pLvlPerWeek').textContent=avgLv?avgLv.toFixed(1):'—';
 
-  document.getElementById('wtblBody').innerHTML=wt.map(({w,i,cur,tgt,needed,weeksYou,weeksFull})=>{
+  // Update output cells only — leave the input cells alone.
+  wt.forEach(({w,i,cur,tgt,needed,weeksYou,weeksFull})=>{
     const done=cur>=tgt;
-    return `<tr>
-      <td><div class="wname ${done?'wdone':''}"><span class="icon">${w.icon}</span>${w.name}</div></td>
-      <td><input type="number" id="wCur${i}" value="${cur}" min="0" max="200" oninput="updatePlanner()"/></td>
-      <td><input type="number" id="wTgt${i}" value="${tgt}" min="0" max="200" oninput="updatePlanner()"/></td>
-      <td class="${done?'wdone':'wxp'}">${done?'✓ done':fmtM(needed)}</td>
-      <td class="${done?'wdone':'wweeks'}">${done?'—':weeksYou.toFixed(1)+'w'}</td>
-      <td class="${done?'wdone':''}" style="color:var(--green)">${done?'—':weeksFull.toFixed(1)+'w'}</td>
-    </tr>`;
-  }).join('');
+    const xpEl=document.getElementById('wXp'+i);
+    const wkEl=document.getElementById('wWeeks'+i);
+    const wkFEl=document.getElementById('wWeeksFull'+i);
+    if(!xpEl||!wkEl||!wkFEl)return;
+    if(done){
+      xpEl.innerHTML='<span class="wdone">✓ done</span>';
+      wkEl.innerHTML='<span style="color:var(--muted)">—</span>';
+      wkFEl.innerHTML='<span style="color:var(--muted)">—</span>';
+    }else{
+      xpEl.innerHTML='<span class="wxp">'+fmtM(needed)+'</span>';
+      wkEl.innerHTML='<span class="wweeks">'+weeksYou.toFixed(1)+'w</span>';
+      wkFEl.innerHTML='<span style="color:var(--green);font-weight:700">'+weeksFull.toFixed(1)+'w</span>';
+    }
+    const nameEl=document.getElementById('wName'+i);
+    if(nameEl){
+      if(done)nameEl.classList.add('wdone');
+      else nameEl.classList.remove('wdone');
+    }
+  });
 
   // priority queue
   const queue=wt.filter(x=>x.cur<x.tgt).sort((a,b)=>a.needed-b.needed);
@@ -869,6 +933,18 @@ function jumpToLevel(lv){
 // ═══════════════════ INIT ═══════════════════
 renderBuffs();
 renderTable();
+renderWeaponsTable();
+
+// Wire wheel/arrow helpers on every numeric input (levels = ±1/±10, tokens = ±100/±1000)
+attachNumberInput(document.getElementById('amM'),0,20,0.1,1);
+attachNumberInput(document.getElementById('amE'),0,20,0.1,1);
+attachNumberInput(document.getElementById('weeklyTokens'),0,500000,100,1000);
+attachNumberInput(document.getElementById('sesTokens'),0,500000,100,1000);
+attachNumberInput(document.getElementById('sesStart'),0,200,1,10);
+attachNumberInput(document.getElementById('sesBaseXpPerToken'),0,5000,1,10);
+attachNumberInput(document.getElementById('rcFrom'),0,200,1,10);
+attachNumberInput(document.getElementById('rcTo'),0,200,1,10);
+
 updateStats();
 calcRange();
 drawChart();
