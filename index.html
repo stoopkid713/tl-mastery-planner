@@ -499,10 +499,10 @@ function calcSession(){
   let cmpHtml='<table style="width:100%;border-collapse:collapse;font-size:0.78rem"><tr style="color:#8b949e;font-size:0.72rem"><th style="text-align:left;padding:5px 8px">Setup</th><th style="text-align:right;padding:5px 8px">Mastery%</th><th style="text-align:right;padding:5px 8px">Eff%</th><th style="text-align:right;padding:5px 8px">XP/token</th><th style="text-align:right;padding:5px 8px">XP this session</th><th style="text-align:right;padding:5px 8px">Levels gained</th></tr>';
   const scenarios=[
     {label:'Bare minimum (Amatori only)',m:0.051,e:0.07},
-    {label:'+ Food',m:0.101,e:0.17},
-    {label:'+ Food + Black Anvil',m:0.151,e:0.17},
-    {label:'+ Food + BA + Mastery Report',m:0.181,e:0.17},
-    {label:'Full stack + Pal Synergy',m:0.20,e:0.185},
+    {label:'+ Food',m:0.551,e:0.17},
+    {label:'+ Food + Black Anvil',m:1.051,e:0.17},
+    {label:'+ Food + BA + Mastery Report',m:1.351,e:0.17},
+    {label:'Full stack + Pal Synergy',m:1.50,e:0.185},
   ];
   scenarios.forEach(s=>{
     const xptS=xpPerToken(s.m,s.e,baseXpt);
